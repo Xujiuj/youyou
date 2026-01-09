@@ -1,0 +1,521 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent: #ff74b7;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+.stage-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}
+
+.webgl-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* --- UI Overlay --- */
+.ui-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 4vw;
+}
+
+.content-box {
+  max-width: 600px;
+  /* 玻璃拟态背景 */
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 30px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent);
+}
+
+.deco-line {
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 400;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 300;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.progress-track {
+  position: absolute;
+  right: 4vw;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progress-fill {
+  width: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 15px var(--accent);
+  transition: height 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- Gate (High Z-Index) --- */
+.gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.gate-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, #1a0a1f 0%, #0a0510 50%, #000000 100%);
+  overflow: hidden;
+}
+
+.gate-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(255, 116, 183, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 168, 213, 0.05) 0%, transparent 60%);
+  animation: gateBgPulse 8s ease-in-out infinite;
+}
+
+@keyframes gateBgPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.gate-bg-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.gate-particle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.gate-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: gateOrbFloat 12s ease-in-out infinite;
+}
+
+.gate-glow-orb.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 116, 183, 0.2) 0%, transparent 70%);
+  top: 10%;
+  left: 10%;
+  animation-duration: 15s;
+}
+
+.gate-glow-orb.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
+  bottom: 20%;
+  right: 15%;
+  animation-duration: 18s;
+  animation-delay: -5s;
+}
+
+.gate-glow-orb.orb-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(255, 168, 213, 0.18) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-duration: 20s;
+  animation-delay: -8s;
+}
+
+@keyframes gateOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  33% { transform: translate(30px, -30px) scale(1.1); opacity: 0.6; }
+  66% { transform: translate(-20px, 20px) scale(0.9); opacity: 0.5; }
+}
+
+.gate-stars {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(2px 2px at 15% 25%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2px 2px at 55% 65%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 45% 45%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 75% 15%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 85% 55%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 25% 75%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 10% 55%, rgba(255, 182, 193, 0.7), transparent),
+    radial-gradient(2px 2px at 90% 35%, rgba(255, 192, 203, 0.6), transparent),
+    radial-gradient(1px 1px at 35% 20%, rgba(255, 116, 183, 0.5), transparent),
+    radial-gradient(2px 2px at 65% 80%, rgba(255, 168, 213, 0.6), transparent);
+  background-size: 200% 200%;
+  animation: gateStarTwinkle 25s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes gateStarTwinkle {
+  0%, 100% { opacity: 1; transform: translate(0, 0); }
+  25% { opacity: 0.6; transform: translate(10px, -10px); }
+  50% { opacity: 0.8; transform: translate(-5px, 5px); }
+  75% { opacity: 0.7; transform: translate(5px, 10px); }
+}
+
+.gate-floating-hearts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.gate-floating-hearts .heart {
+  position: absolute;
+  color: rgba(255, 116, 183, 0.2);
+  font-size: 24px;
+  animation: gateFloatHeart 20s infinite ease-in-out;
+}
+
+.gate-floating-hearts .heart:nth-child(1) {
+  left: 8%;
+  animation-delay: 0s;
+  animation-duration: 18s;
+}
+
+.gate-floating-hearts .heart:nth-child(2) {
+  left: 25%;
+  animation-delay: 2s;
+  animation-duration: 22s;
+}
+
+.gate-floating-hearts .heart:nth-child(3) {
+  left: 45%;
+  animation-delay: 4s;
+  animation-duration: 20s;
+}
+
+.gate-floating-hearts .heart:nth-child(4) {
+  left: 65%;
+  animation-delay: 6s;
+  animation-duration: 19s;
+}
+
+.gate-floating-hearts .heart:nth-child(5) {
+  left: 85%;
+  animation-delay: 8s;
+  animation-duration: 21s;
+}
+
+.gate-floating-hearts .heart:nth-child(6) {
+  left: 15%;
+  animation-delay: 10s;
+  animation-duration: 23s;
+}
+
+.gate-floating-hearts .heart:nth-child(7) {
+  left: 55%;
+  animation-delay: 12s;
+  animation-duration: 17s;
+}
+
+.gate-floating-hearts .heart:nth-child(8) {
+  left: 75%;
+  animation-delay: 14s;
+  animation-duration: 24s;
+}
+
+@keyframes gateFloatHeart {
+  0% {
+    bottom: -5%;
+    transform: translateX(0) rotate(0deg) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    bottom: 105%;
+    transform: translateX(120px) rotate(360deg) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.gate-card {
+  position: relative;
+  width: 450px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.6),
+    0 0 80px rgba(255, 116, 183, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-align: center;
+  z-index: 10;
+  overflow: hidden;
+  animation: gateCardAppear 1.2s ease-out;
+}
+
+@keyframes gateCardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.gate-card-glow {
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(255, 116, 183, 0.3), rgba(138, 43, 226, 0.3));
+  border-radius: 24px;
+  opacity: 0;
+  filter: blur(20px);
+  z-index: -1;
+  animation: gateCardGlow 3s ease-in-out infinite;
+}
+
+@keyframes gateCardGlow {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.gate-card-content {
+  position: relative;
+  padding: 70px 50px;
+  z-index: 2;
+}
+
+.gate-brand {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 0.3em;
+  margin: 0 0 15px 0;
+  overflow: hidden;
+}
+
+.brand-text {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(135deg, #ffffff 0%, #ff74b7 50%, #ffa8d5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: brandShimmer 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(255, 116, 183, 0.5));
+}
+
+@keyframes brandShimmer {
+  0%, 100% { 
+    filter: drop-shadow(0 0 20px rgba(255, 116, 183, 0.5));
+  }
+  50% { 
+    filter: drop-shadow(0 0 40px rgba(255, 116, 183, 0.8));
+  }
+}
+
+.brand-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: brandShine 3s ease-in-out infinite;
+}
+
+@keyframes brandShine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+.gate-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3em;
+  margin-bottom: 50px;
+  text-transform: uppercase;
+  animation: gateHintFade 2s ease-in-out infinite;
+}
+
+@keyframes gateHintFade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.gate-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.4s ease;
+  margin-bottom: 30px;
+}
+
+.gate-input-wrapper::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff74b7, #ffa8d5);
+  transition: width 0.4s ease;
+  box-shadow: 0 0 10px rgba(255, 116, 183, 0.5);
+}
+
+.gate-input-wrapper:focus-within {
+  border-color: transparent;
+}
+
+.gate-input-wrapper:focus-within::before {
+  width: 100%;
+}
+
+.gate-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1.3rem;
+  padding: 15px 0;
+  outline: none;
+  text-align: center;
+  letter-spacing: 0.5em;
+  transition: all 0.3s ease;
+}
+
+.gate-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.3em;
+}
+
+.gate-input:focus::placeholder {
+  opacity: 0.5;
+}
+
+.gate-btn {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.gate-btn span {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.gate-btn:hover {
+  color: #fff;
+}
+
+.gate-btn:hover span {
+  transform: translateX(5px);
+}
+
+.btn-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 116, 183, 0.3), transparent);
+  transform: scale(0);
+  opacity: 0;
+  transition: all 0.6s ease;
+}
+
+.gate-btn:hover .btn-ripple {
+  transform: scale(2);
+  opacity: 1;
+}
+
+.gate-btn:active .btn-ripple {
+  transform: scale(3);
+  opacity: 0;
+}
+
+.gate-error {
+  margin-top: 25px;
+  color: #ff6b9d;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  animation: gateErrorShake 0.5s ease;
+  text-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
+}
+
+@keyframes gateErrorShake {
+  0%, 100% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}

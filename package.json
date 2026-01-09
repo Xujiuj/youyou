@@ -1,0 +1,26 @@
+{
+  "name": "pink-castle",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@pixi/filter-advanced-bloom": "^5.1.1",
+    "@pixi/filter-kawase-blur": "^5.1.1",
+    "@pixi/filter-rgb-split": "^5.1.1",
+    "gsap": "3.12.5",
+    "next": "14.2.3",
+    "pixi.js": "^7.4.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.25",
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7",
+    "typescript": "5.3.3"
+  }
+}
