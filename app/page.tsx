@@ -670,13 +670,25 @@ function ChoiceScreen({ show }: { show: boolean }) {
   }, [show]);
 
   const navigateToStory = () => {
-    gsap.to(".choice-container", {
+    // 整个页面淡出，避免与目标页面的入场动画冲突
+    const tl = gsap.timeline();
+    tl.to(".choice-container", {
       opacity: 0,
       scale: 0.95,
-      duration: 0.8,
+      duration: 0.6,
       ease: "power2.inOut",
-      onComplete: () => router.push("/")
     });
+    tl.to(".rose-bg", {
+      opacity: 0,
+      duration: 0.4,
+      ease: "power2.out",
+    }, "-=0.3");
+    tl.to(".rose-stage", {
+      opacity: 0,
+      duration: 0.3,
+      ease: "power2.out",
+      onComplete: () => router.push("/gallery/v3")
+    }, "-=0.2");
   };
 
   const showComingSoon = () => {
