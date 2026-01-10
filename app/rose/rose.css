@@ -12,15 +12,15 @@
 .rose-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 30%, #1a0a1f 0%, #0a0510 50%, #000000 100%);
+  background: radial-gradient(ellipse at 50% 30%, #2d1b3d 0%, #1a0f2e 50%, #0f0818 100%);
 }
 
 .rose-bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 40%, rgba(255, 116, 183, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 70% 60%, rgba(138, 43, 226, 0.05) 0%, transparent 50%);
+  background: radial-gradient(circle at 30% 40%, rgba(255, 116, 183, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 70% 60%, rgba(186, 85, 211, 0.1) 0%, transparent 50%);
   animation: bgPulse 8s ease-in-out infinite;
 }
 
@@ -211,16 +211,17 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  padding: 40px;
+  padding: 20px;
+  overflow-y: auto;
   /* 移除CSS动画，由GSAP统一管理 */
 }
 
 .choice-title {
   font-family: var(--font-display);
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 300;
   letter-spacing: 0.15em;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   background: linear-gradient(135deg, #ffffff 0%, #ffa8d5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -228,6 +229,12 @@
   animation: titleGlow 3s ease-in-out infinite;
   transform-style: preserve-3d;
   perspective: 1000px;
+}
+
+@media (max-width: 768px) {
+  .choice-title {
+    font-size: 2rem;
+  }
 }
 
 @keyframes titleGlow {
@@ -242,41 +249,60 @@
 }
 
 .choice-subtitle {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  margin: 0 0 60px 0;
+  margin: 0 0 30px 0;
 }
 
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 40px;
-  max-width: 900px;
+  gap: 20px;
+  max-width: 1000px;
   width: 100%;
-  margin-bottom: 60px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 1024px) {
+  .choice-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
 }
 
 @media (max-width: 768px) {
   .choice-grid {
     grid-template-columns: 1fr;
-    gap: 30px;
+    gap: 15px;
   }
 }
 
 .choice-btn {
   position: relative;
-  padding: 50px 40px;
+  padding: 28px 25px;
   background: transparent;
   border: none;
-  border-radius: 20px;
+  border-radius: 16px;
   cursor: pointer;
   overflow: hidden;
   /* 移除transition，避免与GSAP动画冲突 */
   /* transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); */
   transform-style: preserve-3d;
   perspective: 1000px;
+}
+
+@media (max-width: 1024px) {
+  .choice-btn {
+    padding: 25px 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .choice-btn {
+    padding: 30px 25px;
+  }
 }
 
 /* hover时才启用transition */
@@ -304,20 +330,20 @@
 .btn-bg {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border: 1px solid rgba(255, 182, 193, 0.2);
+  border-radius: 16px;
   transition: all 0.4s ease;
 }
 
 .choice-btn.active:hover .btn-bg {
-  background: rgba(255, 116, 183, 0.12);
-  border-color: rgba(255, 116, 183, 0.4);
+  background: rgba(255, 182, 193, 0.15);
+  border-color: rgba(255, 116, 183, 0.5);
   box-shadow: 
-    0 25px 70px rgba(255, 116, 183, 0.4),
+    0 20px 60px rgba(255, 116, 183, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 60px rgba(255, 116, 183, 0.3);
+    0 0 50px rgba(255, 182, 193, 0.25);
   transform: scale(1.02);
 }
 
@@ -328,10 +354,18 @@
 }
 
 .btn-icon {
-  font-size: 3.5rem;
-  margin-bottom: 20px;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
   display: inline-block;
   animation: iconFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 182, 193, 0.5));
+}
+
+@media (max-width: 1024px) {
+  .btn-icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+  }
 }
 
 @keyframes iconFloat {
@@ -351,19 +385,32 @@
 
 .btn-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   font-weight: 400;
   letter-spacing: 0.05em;
-  margin: 0 0 10px 0;
+  margin: 0 0 6px 0;
   color: #fff;
+  text-shadow: 0 0 20px rgba(255, 182, 193, 0.3);
+}
+
+@media (max-width: 1024px) {
+  .btn-title {
+    font-size: 1.05rem;
+  }
 }
 
 .btn-desc {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.08em;
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.4;
+}
+
+@media (max-width: 1024px) {
+  .btn-desc {
+    font-size: 0.7rem;
+  }
 }
 
 .btn-shine {
@@ -388,13 +435,13 @@
 
 .construction-badge {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 8px 16px;
-  background: rgba(255, 193, 7, 0.2);
-  border: 1px solid rgba(255, 193, 7, 0.4);
-  border-radius: 20px;
-  font-size: 0.75rem;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  background: rgba(255, 193, 7, 0.25);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  border-radius: 16px;
+  font-size: 0.7rem;
   color: #ffc107;
   letter-spacing: 0.05em;
   backdrop-filter: blur(10px);
@@ -402,25 +449,25 @@
 
 .choice-footer {
   text-align: center;
-  margin-top: 40px;
+  margin-top: 20px;
 }
 
 .footer-line {
   width: 60px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #ff74b7, transparent);
-  margin: 0 auto 20px;
+  background: linear-gradient(90deg, transparent, #ffb6c1, transparent);
+  margin: 0 auto 15px;
   animation: lineGlow 2s ease-in-out infinite;
 }
 
 @keyframes lineGlow {
-  0%, 100% { opacity: 0.5; box-shadow: 0 0 5px #ff74b7; }
-  50% { opacity: 1; box-shadow: 0 0 15px #ff74b7; }
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 5px #ffb6c1; }
+  50% { opacity: 1; box-shadow: 0 0 15px #ffb6c1; }
 }
 
 .footer-text {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  color: rgba(255, 182, 193, 0.6);
   letter-spacing: 0.2em;
   margin: 0;
   font-style: italic;
@@ -436,7 +483,7 @@
 
 .heart {
   position: absolute;
-  color: rgba(255, 116, 183, 0.15);
+  color: rgba(255, 182, 193, 0.2);
   font-size: 20px;
   animation: floatHeart 15s infinite ease-in-out;
 }
@@ -496,21 +543,21 @@
   align-items: center;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 25px;
 }
 
 .deco-line-top {
   width: 80px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 116, 183, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 182, 193, 0.7), transparent);
 }
 
 .deco-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ff74b7;
-  box-shadow: 0 0 20px #ff74b7;
+  background: #ffb6c1;
+  box-shadow: 0 0 20px #ffb6c1;
   animation: dotPulse 2s ease-in-out infinite;
 }
 
@@ -523,7 +570,7 @@
 .journey-path {
   width: 100%;
   max-width: 800px;
-  margin: 0 auto 40px;
+  margin: 0 auto 25px;
   opacity: 0;
 }
 
@@ -553,7 +600,7 @@
   height: 300px;
   top: 10%;
   left: 10%;
-  background: radial-gradient(circle, rgba(255, 116, 183, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 182, 193, 0.5) 0%, transparent 70%);
   animation-delay: 0s;
 }
 
@@ -562,7 +609,7 @@
   height: 400px;
   top: 50%;
   right: 10%;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(221, 160, 221, 0.4) 0%, transparent 70%);
   animation-delay: 2s;
 }
 
@@ -571,7 +618,7 @@
   height: 350px;
   bottom: 10%;
   left: 50%;
-  background: radial-gradient(circle, rgba(255, 168, 213, 0.35) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 192, 203, 0.45) 0%, transparent 70%);
   animation-delay: 4s;
 }
 
@@ -583,10 +630,10 @@
 
 /* 按钮详情文本 */
 .btn-detail {
-  margin-top: 12px;
-  font-size: 0.75rem;
-  color: rgba(255, 116, 183, 0.7);
-  letter-spacing: 0.15em;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: rgba(255, 182, 193, 0.8);
+  letter-spacing: 0.12em;
   font-weight: 500;
 }
 
@@ -639,9 +686,9 @@
 
 /* 底部日期 */
 .footer-date {
-  margin-top: 12px;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.25);
+  margin-top: 10px;
+  font-size: 0.7rem;
+  color: rgba(255, 182, 193, 0.4);
   letter-spacing: 0.3em;
   font-family: var(--font-display);
 }

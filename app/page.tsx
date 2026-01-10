@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Application, Sprite, Container, Texture, Filter, BLEND_MODES, WRAP_MODES, DisplacementFilter } from "pixi.js";
-import { AdvancedBloomFilter } from "@pixi/filter-advanced-bloom";
-import { RGBSplitFilter } from "@pixi/filter-rgb-split";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Observer } from "gsap/Observer";
 import { useRouter } from "next/navigation";
-import "../app/rose/rose.css";
+import "./rose/rose.css";
+import "./story.css";
 
 // --- Config ---
 const PASS = process.env.NEXT_PUBLIC_PASS || "1314";
@@ -24,488 +22,241 @@ const SCENES = [
   { img: "/her9.png", svg: "/ref/her9.svg", en: "Eternity", cn: "这一生很长，好在有你，闪闪发光" },
 ] as const;
 
-// --- GLSL Shaders ---
-const gradientFrag = `
-precision mediump float;
-uniform float time;
-uniform vec2 resolution;
-
-void main() {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
-    float t = time * 0.1;
-    // 更深邃、更现代的高级灰/紫调
-    vec3 col1 = vec3(0.02, 0.02, 0.05); 
-    vec3 col2 = vec3(0.15, 0.05, 0.15);
-    vec3 col3 = vec3(0.05, 0.1, 0.2);
-    
-    float n1 = sin(uv.x * 1.5 + t) * cos(uv.y * 1.5 - t);
-    float n2 = sin(uv.x * 2.5 - t * 1.2) * cos(uv.y * 2.5 + t);
-    
-    vec3 finalColor = col1;
-    finalColor = mix(finalColor, col2, smoothstep(-1.0, 1.0, n1));
-    finalColor = mix(finalColor, col3, smoothstep(-1.0, 1.0, n2) * 0.6);
-    
-    float vignette = 1.0 - length(uv - 0.5) * 1.2;
-    finalColor *= vignette;
-    
-    gl_FragColor = vec4(finalColor, 1.0);
-}
-`;
-
-// --- WebGL Experience ---
-function WebGLExperience({ idx, setIdx }: { idx: number; setIdx: React.Dispatch<React.SetStateAction<number>> }) {
+// --- Story Experience (Romantic Design) ---
+function StoryExperience({ idx, setIdx }: { idx: number; setIdx: React.Dispatch<React.SetStateAction<number>> }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
-  
-  const bgUniformsRef = useRef({ time: 0, resolution: [0, 0] });
-  const spritesRef = useRef<Sprite[]>([]);
-  const linesRef = useRef<Sprite[]>([]);
-  const particlesRef = useRef<Container | null>(null);
-  
-  // 滤镜引用
-  const displacementFilterRef = useRef<DisplacementFilter | null>(null);
-  const rgbFilterRef = useRef<RGBSplitFilter | null>(null);
-  const bloomFilterRef = useRef<AdvancedBloomFilter | null>(null);
-  
-  const currentIdxRef = useRef(idx);
-  const isTransitioningRef = useRef(false);
-  const destroyedRef = useRef(false);
-  const isEndingRef = useRef(false); // New: Track ending state
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useEffect(() => {
+    gsap.registerPlugin(Observer);
+    
+    const obs = Observer.create({
+      target: window,
+      type: "wheel,touch,pointer",
+      wheelSpeed: -1,
+      tolerance: 10,
+      preventDefault: true,
+      onDown: () => {
+        if (!isTransitioning && idx < SCENES.length) {
+          setIdx(i => i + 1);
+        }
+      },
+      onUp: () => {
+        if (!isTransitioning && idx > 0) {
+          setIdx(i => i - 1);
+        }
+      }
+    });
+    
+    return () => obs.kill();
+  }, [idx, setIdx, isTransitioning]);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    destroyedRef.current = false;
-
-    const app = new Application({
-      resizeTo: window,
-      backgroundAlpha: 1,
-      backgroundColor: 0x000000,
-      antialias: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-      autoDensity: true,
-    });
     
-    if (containerRef.current) {
-        containerRef.current.appendChild(app.view as unknown as Node);
-        appRef.current = app;
-    }
+    setIsTransitioning(true);
+    
+    const tl = gsap.timeline({
+      onComplete: () => setIsTransitioning(false)
+    });
 
-    const initStage = async () => {
-        if (destroyedRef.current || !app.renderer) return;
+    tl.fromTo(
+      `.story-scene[data-index="${idx}"]`,
+      { opacity: 0, scale: 1.05 },
+      { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" }
+    );
 
-        // 1. 背景层 (Shader)
-        const bgFilter = new Filter(undefined, gradientFrag, bgUniformsRef.current);
-        const bgSprite = new Sprite(Texture.WHITE);
-        bgSprite.width = app.renderer.screen.width;
-        bgSprite.height = app.renderer.screen.height;
-        bgSprite.filters = [bgFilter];
-        app.stage.addChild(bgSprite);
+    tl.fromTo(
+      `.story-text[data-index="${idx}"] .story-en`,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 1, ease: "power3.out" },
+      "-=1"
+    );
 
-        // 2. 星尘粒子层 (Stardust)
-        const pContainer = new Container();
-        particlesRef.current = pContainer;
-        app.stage.addChild(pContainer);
-
-        const starTexture = Texture.from("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIj48Y2lyY2xlIGN4PSI1IiBjeT0iNSIgcj0iNCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOCIvPjwvc3ZnPg==");
-        
-        for(let i=0; i<150; i++) {
-            const star = new Sprite(starTexture);
-            star.x = Math.random() * app.renderer.screen.width;
-            star.y = Math.random() * app.renderer.screen.height;
-            star.alpha = Math.random() * 0.5 + 0.1;
-            star.scale.set(Math.random() * 0.5 + 0.1);
-            // Custom properties for animation
-            (star as any).vx = (Math.random() - 0.5) * 0.2;
-            (star as any).vy = (Math.random() - 0.5) * 0.2;
-            pContainer.addChild(star);
-        }
-
-        // 3. 内容层容器
-        const photoContainer = new Container();
-        const lineContainer = new Container();
-        
-        // 4. 滤镜配置
-        const rgbFilter = new RGBSplitFilter([0, 0], [0, 0], [0, 0]);
-        rgbFilterRef.current = rgbFilter;
-        
-        // 线条专用的 Bloom - 增强亮度
-        const bloomFilter = new AdvancedBloomFilter({
-            threshold: 0.4,
-            bloomScale: 1.5,
-            brightness: 1.5,
-            blur: 4,
-            quality: 5
-        });
-        bloomFilterRef.current = bloomFilter;
-
-        // 全局置换 (用于转场液化)
-        const noiseTex = Texture.from("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj48ZmlsdGVyIGlkPSJnoiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAxIiBudW1PY3RhdmVzPSIyIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2cpIiBvcGFjaXR5PSIxIi8+PC9zdmc+");
-        const dispSprite = new Sprite(noiseTex);
-        dispSprite.texture.baseTexture.wrapMode = WRAP_MODES.REPEAT;
-        dispSprite.scale.set(4);
-        app.stage.addChild(dispSprite);
-        
-        const dispFilter = new DisplacementFilter(dispSprite);
-        dispFilter.scale.set(0);
-        displacementFilterRef.current = dispFilter;
-
-        // 应用滤镜策略
-        lineContainer.filters = [dispFilter, rgbFilter, bloomFilter];
-        photoContainer.filters = [dispFilter, rgbFilter];
-
-        // 顺序：照片在下，线条在上
-        app.stage.addChild(photoContainer);
-        app.stage.addChild(lineContainer);
-
-        // 5. 加载资源
-        for (const s of SCENES) {
-            if (destroyedRef.current) return;
-
-            // Photo
-            const imgTex = await Texture.fromURL(s.img);
-            if (destroyedRef.current || !app.renderer) return;
-
-            const photo = new Sprite(imgTex);
-            photo.anchor.set(0.5);
-            photo.x = app.renderer.screen.width / 2;
-            photo.y = app.renderer.screen.height / 2;
-            
-            // 缩小比例：0.55
-            const ratio = Math.max(app.renderer.screen.width / photo.width, app.renderer.screen.height / photo.height) * 0.55;
-            photo.scale.set(ratio);
-            photo.alpha = 0;
-            
-            photoContainer.addChild(photo);
-            spritesRef.current.push(photo);
-
-            // SVG Lines
-            const svgTex = await Texture.fromURL(s.svg);
-            if (destroyedRef.current || !app.renderer) return;
-
-            const line = new Sprite(svgTex);
-            line.anchor.set(0.5);
-            line.x = app.renderer.screen.width / 2;
-            line.y = app.renderer.screen.height / 2;
-            line.scale.set(ratio);
-            line.alpha = 0;
-            line.blendMode = BLEND_MODES.ADD;
-            line.tint = 0xffeef5; // Softer pink-white
-            
-            lineContainer.addChild(line);
-            linesRef.current.push(line);
-        }
-
-        app.ticker.add((delta) => {
-            if (destroyedRef.current || !app.renderer) return;
-            bgUniformsRef.current.time += 0.01 * delta;
-            bgUniformsRef.current.resolution = [app.renderer.screen.width, app.renderer.screen.height];
-            dispSprite.x += 1 * delta;
-            dispSprite.y += 0.5 * delta;
-
-            // Particle Animation
-            if (particlesRef.current) {
-                for (const p of particlesRef.current.children) {
-                    p.x += (p as any).vx * delta;
-                    p.y += (p as any).vy * delta;
-                    if (p.x < 0) p.x = app.renderer.screen.width;
-                    if (p.x > app.renderer.screen.width) p.x = 0;
-                    if (p.y < 0) p.y = app.renderer.screen.height;
-                    if (p.y > app.renderer.screen.height) p.y = 0;
-                }
-            }
-        });
-
-        transitionTo(0);
-    };
-
-    initStage();
+    tl.fromTo(
+      `.story-text[data-index="${idx}"] .story-cn`,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 1, ease: "power3.out" },
+      "-=0.7"
+    );
 
     return () => {
-        destroyedRef.current = true;
-        if (appRef.current) {
-            appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
-            appRef.current = null;
-        }
+      tl.kill();
     };
-  }, []);
-
-  // --- Animation Logic ---
-  const killSceneTweens = (index: number) => {
-      if (!spritesRef.current[index] || !linesRef.current[index]) return;
-      const photo = spritesRef.current[index];
-      const line = linesRef.current[index];
-      gsap.killTweensOf([photo, line, photo.scale, line.scale, photo.position, line.position]);
-      if (displacementFilterRef.current) gsap.killTweensOf(displacementFilterRef.current.scale);
-      if (rgbFilterRef.current) gsap.killTweensOf(rgbFilterRef.current);
-      if (bloomFilterRef.current) gsap.killTweensOf(bloomFilterRef.current);
-  };
-
-  const showEnding = () => {
-      if (!appRef.current || destroyedRef.current || isEndingRef.current) return;
-      isEndingRef.current = true;
-      isTransitioningRef.current = true; // Lock navigation
-
-      // Kill active scene
-      killSceneTweens(currentIdxRef.current);
-      const activePhoto = spritesRef.current[currentIdxRef.current];
-      const activeLine = linesRef.current[currentIdxRef.current];
-      if (activePhoto) gsap.to(activePhoto, { alpha: 0, duration: 1 });
-      if (activeLine) gsap.to(activeLine, { alpha: 0, duration: 1 });
-
-      const cx = appRef.current.renderer.screen.width / 2;
-      const cy = appRef.current.renderer.screen.height / 2;
-      
-      // Montage Animation: Spiral Layout
-      spritesRef.current.forEach((sprite, i) => {
-         sprite.alpha = 0;
-         sprite.scale.set(0);
-         sprite.x = cx;
-         sprite.y = cy;
-         sprite.rotation = (Math.random() - 0.5) * 1;
-         
-         // Calculate spiral position
-         const angle = (i / spritesRef.current.length) * Math.PI * 2;
-         const radius = Math.min(cx, cy) * 0.7; // 70% of screen radius
-         const targetX = cx + Math.cos(angle) * radius;
-         const targetY = cy + Math.sin(angle) * radius;
-
-         const tl = gsap.timeline({ delay: i * 0.2 + 1 });
-         tl.to(sprite, { alpha: 0.8, pixi: { scale: 0.15 }, duration: 1.5, ease: "back.out(1.2)" }) // Pop in small
-           .to(sprite, { x: targetX, y: targetY, rotation: 0, duration: 2, ease: "power3.out" }, "<");
-           
-         // Floating effect
-         gsap.to(sprite, { y: targetY + 20, duration: 2 + Math.random(), yoyo: true, repeat: -1, ease: "sine.inOut", delay: i * 0.2 + 3 });
-      });
-
-      // Camera drift
-      if (particlesRef.current) {
-          gsap.to(particlesRef.current, { rotation: 0.2, duration: 20, ease: "none", repeat: -1, yoyo: true });
-      }
-  };
-
-  const transitionTo = (index: number) => {
-      if (!appRef.current || destroyedRef.current || !appRef.current.renderer) return;
-      if (isEndingRef.current) return;
-
-      // Force Cleanup
-      spritesRef.current.forEach((s, i) => { if (i !== index) { gsap.killTweensOf(s); s.alpha = 0; } });
-      linesRef.current.forEach((l, i) => { if (i !== index) { gsap.killTweensOf(l); l.alpha = 0; } });
-
-      const photo = spritesRef.current[index];
-      const line = linesRef.current[index];
-      if (!photo || !line) return;
-      
-      killSceneTweens(index);
-
-      const cx = appRef.current.renderer.screen.width / 2;
-      const cy = appRef.current.renderer.screen.height / 2;
-
-      const tl = gsap.timeline({
-          onComplete: () => { isTransitioningRef.current = false; }
-      });
-
-      // Reset
-      gsap.set([photo, line], { alpha: 0, pixi: { scale: photo.scale.x * 1.15 } }); 
-      photo.position.set(cx, cy);
-      line.position.set(cx, cy);
-
-      if (displacementFilterRef.current && rgbFilterRef.current && bloomFilterRef.current) {
-          gsap.set(displacementFilterRef.current.scale, { x: 0, y: 0 });
-          gsap.set(rgbFilterRef.current, { red: [0, 0], green: [0, 0], blue: [0, 0] });
-          gsap.set(bloomFilterRef.current, { threshold: 0.4, bloomScale: 1.5, brightness: 1.5 });
-      }
-
-      // Phase 1: Laser Etch (Flicker + Shake)
-      // Rapid flicker
-      tl.to(line, { alpha: 1, duration: 0.05, repeat: 5, yoyo: true }) 
-        .to(line, { alpha: 1, duration: 0.5 });
-        
-      // Shake effect on RGB filter to simulate energy
-      if (rgbFilterRef.current) {
-          tl.to(rgbFilterRef.current, { red: [5, 0], blue: [-5, 0], duration: 0.1, yoyo: true, repeat: 5 }, 0);
-      }
-
-      // Phase 2: Transformation
-      tl.to(photo, { alpha: 1, duration: 1.5, ease: "power2.inOut" }, ">-0.2");
-      tl.to(line, { alpha: 0, duration: 1.0, ease: "power2.inOut" }, "<"); 
-
-      // 3. Settle
-      tl.to([photo.scale, line.scale], { 
-          x: photo.scale.x / 1.15, 
-          y: photo.scale.y / 1.15, 
-          duration: 4, 
-          ease: "sine.out" 
-      }, 0);
-  };
-
-  const hideScene = (index: number, dir: number) => {
-      if (!appRef.current || destroyedRef.current) return;
-      const photo = spritesRef.current[index];
-      const line = linesRef.current[index];
-      if (!photo || !line) return;
-
-      killSceneTweens(index);
-
-      const tl = gsap.timeline();
-      if (rgbFilterRef.current) {
-         tl.to(rgbFilterRef.current, { red: [10, 0], blue: [-10, 0], duration: 0.4, yoyo: true, repeat: 1 }, 0);
-      }
-      tl.to([photo, line], { alpha: 0, x: photo.x - dir * 100, duration: 0.8, ease: "power2.inOut" }, 0);
-      return tl;
-  };
-
-  useEffect(() => {
-      if (idx === currentIdxRef.current || isTransitioningRef.current || !appRef.current) return;
-      
-      const prev = currentIdxRef.current;
-      const next = idx;
-      
-      currentIdxRef.current = next;
-      isTransitioningRef.current = true;
-
-      // Check for Ending
-      if (idx === SCENES.length) {
-          hideScene(prev, 1);
-          gsap.delayedCall(0.8, showEnding);
-          return;
-      }
-
-      const dir = next > prev ? 1 : -1;
-      hideScene(prev, dir);
-      
-      gsap.delayedCall(0.6, () => {
-          if (!destroyedRef.current) transitionTo(next);
-      });
-
   }, [idx]);
 
+  if (idx >= SCENES.length) {
+    return <EndingScene />;
+  }
+
+  return (
+    <div ref={containerRef} className="story-experience">
+      <div className="story-background">
+        <div className="story-gradient"></div>
+        <div className="story-stars"></div>
+        <div className="story-floating-particles">
+          {[...Array(30)].map((_, i) => (
+            <div key={i} className="particle" style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 10}s`,
+              animationDuration: `${15 + Math.random() * 10}s`
+            }}></div>
+          ))}
+        </div>
+      </div>
+
+      <div className="story-scenes">
+        {SCENES.map((scene, i) => (
+          <div
+            key={i}
+            className={`story-scene ${i === idx ? 'active' : ''}`}
+            data-index={i}
+            style={{ display: i === idx ? 'block' : 'none' }}
+          >
+            <div className="story-image-wrapper">
+              <div className="image-glow"></div>
+              <img src={scene.img} alt={scene.en} className="story-image" />
+              <img src={scene.svg} alt={scene.en} className="story-svg-overlay" />
+            </div>
+
+            <div className="story-text" data-index={i}>
+              <div className="text-decoration"></div>
+              <h2 className="story-en">{scene.en}</h2>
+              <p className="story-cn">{scene.cn}</p>
+              <div className="text-decoration-bottom"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="story-navigation">
+        <div className="nav-dots">
+          {SCENES.map((_, i) => (
+            <button
+              key={i}
+              className={`nav-dot ${i === idx ? 'active' : ''}`}
+              onClick={() => !isTransitioning && setIdx(i)}
+            >
+              <span className="dot-inner"></span>
+            </button>
+          ))}
+        </div>
+        <div className="nav-hint">
+          {idx < SCENES.length - 1 ? '滚动查看更多' : '滚动查看结局'}
+        </div>
+      </div>
+
+      <div className="story-decorations">
+        <div className="deco-heart deco-heart-1">♥</div>
+        <div className="deco-heart deco-heart-2">♥</div>
+        <div className="deco-heart deco-heart-3">♥</div>
+      </div>
+    </div>
+  );
+}
+
+
+function EndingScene() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-      gsap.registerPlugin(Observer);
-      const obs = Observer.create({
-          target: window,
-          type: "wheel,touch,pointer",
-          wheelSpeed: -1,
-          tolerance: 10,
-          preventDefault: true,
-          onDown: () => {
-              // Allow going to length (Ending)
-              if (!isTransitioningRef.current && idx < SCENES.length && !isEndingRef.current) {
-                  setIdx(i => i + 1);
-              }
-          },
-          onUp: () => {
-              if (!isTransitioningRef.current && idx > 0 && !isEndingRef.current) {
-                  setIdx(i => i - 1);
-              }
-          }
-      });
-      return () => obs.kill();
-  }, [idx, setIdx]);
+    if (!containerRef.current) return;
 
-  return <div ref={containerRef} className="webgl-container" />;
-}
+    const tl = gsap.timeline({ delay: 0.5 });
 
-// --- UI Overlay ---
-function UIOverlay({ idx }: { idx: number }) {
-    if (idx >= SCENES.length) return <EndingOverlay />; // Show ending text
-
-    const story = SCENES[idx];
-    const containerRef = useRef<HTMLDivElement>(null);
-    const titleRef = useRef<HTMLHeadingElement>(null);
-    const textRef = useRef<HTMLParagraphElement>(null);
-    const lineRef = useRef<HTMLDivElement>(null);
-    const progressRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const ctx = gsap.context(() => {
-            const tl = gsap.timeline();
-            
-            // Mask Reveal Setup
-            // We use clip-path to hide the text initially
-            gsap.set([titleRef.current, textRef.current], { 
-                clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0 100%)", 
-                y: 50, 
-                opacity: 0 
-            });
-            gsap.set(lineRef.current, { scaleX: 0, transformOrigin: "left center" });
-
-            // Animate In - Cinematic Reveal
-            tl.to(lineRef.current, { scaleX: 1, duration: 1.0, ease: "expo.out" })
-              .to(titleRef.current, { 
-                  clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0 100%)", 
-                  y: 0, 
-                  opacity: 1,
-                  duration: 1.5, 
-                  ease: "power3.out", 
-              }, "-=0.8")
-              .to(textRef.current, { 
-                  clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0 100%)",
-                  y: 0, 
-                  opacity: 1,
-                  duration: 1.5, 
-                  ease: "power3.out" 
-              }, "-=1.3");
-              
-        }, containerRef);
-        return () => ctx.revert();
-    }, [idx]);
-
-    return (
-        <div ref={containerRef} className="ui-overlay">
-            <div className="content-box">
-                <div ref={lineRef} className="deco-line" />
-                <h1 ref={titleRef} className="title-cinematic">
-                    {story.en}
-                </h1>
-                <p ref={textRef} className="subtitle-cinematic">{story.cn}</p>
-            </div>
-            <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${((idx + 1) / SCENES.length) * 100}%` }} />
-            </div>
-        </div>
+    tl.fromTo(
+      ".ending-title",
+      { opacity: 0, scale: 0.9, y: 30 },
+      { opacity: 1, scale: 1, y: 0, duration: 1.5, ease: "power3.out" }
     );
-}
 
-function EndingOverlay() {
-    const ref = useRef(null);
-    useEffect(() => {
-        gsap.fromTo(ref.current, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 2, delay: 2 });
-    }, []);
-    return (
-        <div ref={ref} className="ui-overlay ending-mode">
-             <div className="content-box center">
-                <h1 className="title-cinematic large">FOREVER & ALWAYS</h1>
-                <p className="subtitle-cinematic">未完待续 · 我们的故事刚刚开始</p>
-            </div>
-        </div>
+    tl.fromTo(
+      ".ending-subtitle",
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 1, ease: "power2.out" },
+      "-=0.8"
     );
+
+    tl.fromTo(
+      ".ending-gallery",
+      { opacity: 0 },
+      { opacity: 1, duration: 1, ease: "power2.out" },
+      "-=0.5"
+    );
+
+    SCENES.forEach((_, i) => {
+      tl.fromTo(
+        `.ending-photo[data-index="${i}"]`,
+        { opacity: 0, scale: 0.8, rotation: Math.random() * 20 - 10 },
+        { 
+          opacity: 1, 
+          scale: 1, 
+          rotation: 0,
+          duration: 0.8, 
+          ease: "back.out(1.5)" 
+        },
+        `-=${i === 0 ? 0 : 0.6}`
+      );
+    });
+
+    return () => { tl.kill(); };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="ending-scene">
+      <div className="story-background">
+        <div className="story-gradient"></div>
+        <div className="story-stars"></div>
+      </div>
+
+      <div className="ending-content">
+        <h1 className="ending-title">Forever & Always</h1>
+        <p className="ending-subtitle">未完待续 · 我们的故事刚刚开始</p>
+
+        <div className="ending-gallery">
+          {SCENES.map((scene, i) => (
+            <div key={i} className="ending-photo" data-index={i}>
+              <img src={scene.img} alt={scene.en} />
+              <div className="photo-label">{scene.en}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// --- Main Page ---
+
 export default function Page() {
   const [unlocked, setUnlocked] = useState(false);
   const [showChoice, setShowChoice] = useState(false);
-  const [renderChoice, setRenderChoice] = useState(false); // 新增：控制渲染
+  const [renderChoice, setRenderChoice] = useState(false);
+  const [showStory, setShowStory] = useState(false);
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     const isUnlocked = sessionStorage.getItem(SESSION_KEY) === "1";
+    const viewStory = sessionStorage.getItem("view_story") === "1";
+    
     if (isUnlocked) {
       setUnlocked(true);
-      setRenderChoice(true);
-      setShowChoice(true);
+      if (viewStory) {
+        setShowStory(true);
+        setShowChoice(false);
+        setRenderChoice(false);
+      } else {
+        setRenderChoice(true);
+        setShowChoice(true);
+      }
     }
   }, []);
 
   const handleUnlock = () => {
     setUnlocked(true);
-    // 立即渲染ChoiceScreen（但保持隐藏）
     setRenderChoice(true);
-    // 不立即显示选择界面，等待粒子动画完成
   };
 
   const handleParticleComplete = () => {
-    // 显示选择界面（触发淡入动画）
     setShowChoice(prev => {
       if (!prev) {
         return true;
@@ -514,42 +265,42 @@ export default function Page() {
     });
   };
 
+  const handleNavigateToStory = () => {
+    sessionStorage.setItem("view_story", "1");
+    setShowStory(true);
+    setShowChoice(false);
+    setRenderChoice(false);
+  };
+
   return (
     <div className="stage-root">
-        {unlocked && !showChoice && <WebGLExperience idx={idx} setIdx={setIdx} />}
-        {unlocked && !showChoice && <UIOverlay idx={idx} />}
-        {renderChoice && <ChoiceScreen show={showChoice} />}
+        {showStory && <StoryExperience idx={idx} setIdx={setIdx} />}
+        {renderChoice && <ChoiceScreen show={showChoice} onNavigateToStory={handleNavigateToStory} />}
         {!unlocked && <Gate onUnlock={handleUnlock} onParticleComplete={handleParticleComplete} />}
     </div>
   );
 }
 
-// 选择界面组件
-function ChoiceScreen({ show }: { show: boolean }) {
-  const router = useRouter();
+
+function ChoiceScreen({ show, onNavigateToStory }: { show: boolean; onNavigateToStory: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 只在 show 为 true 时执行动画
     if (!show) return;
 
-    // 电影级入场动画 - 与Gate的淡出交叉进行
-    const tl = gsap.timeline({ delay: 0 }); // 立即开始
+    const tl = gsap.timeline({ delay: 0 });
     
-    // 背景淡入 - 从Gate的背景过渡过来
     tl.fromTo(".rose-bg", 
       { opacity: 0 },
       { opacity: 1, duration: 1, ease: "power2.out" }
     );
     
-    // 顶部装饰
     tl.fromTo(".top-decoration", 
       { opacity: 0, y: -30 },
       { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
       "-=0.6"
     );
     
-    // 标题 - 从下方滑入并放大
     tl.fromTo(".choice-title", 
       { 
         y: 100, 
@@ -568,7 +319,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       "-=0.5"
     );
     
-    // 副标题 - 字符逐个出现
     tl.fromTo(".choice-subtitle", 
       { 
         opacity: 0,
@@ -585,7 +335,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       "-=0.8"
     );
     
-    // 旅程路径
     tl.to(".journey-path", 
       { opacity: 1, duration: 0.6 },
       "-=0.5"
@@ -600,7 +349,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       "-=0.3"
     );
     
-    // 按钮 - 3D翻转入场
     gsap.set(".choice-btn", { 
       opacity: 0, 
       scale: 0.5,
@@ -620,7 +368,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       "-=1"
     );
     
-    // 底部装饰 - 线条展开
     tl.fromTo(".footer-line", 
       { scaleX: 0, opacity: 0 },
       { scaleX: 1, opacity: 1, duration: 0.8, ease: "power2.out" },
@@ -639,7 +386,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       "-=0.2"
     );
     
-    // 添加持续的浮动动画
     const floatTween = gsap.to(".choice-btn", {
       y: -10,
       duration: 2,
@@ -652,7 +398,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       }
     });
 
-    // 清理函数 - 组件卸载时杀死所有动画
     return () => {
       tl.kill();
       floatTween.kill();
@@ -670,25 +415,15 @@ function ChoiceScreen({ show }: { show: boolean }) {
   }, [show]);
 
   const navigateToStory = () => {
-    // 整个页面淡出，避免与目标页面的入场动画冲突
-    const tl = gsap.timeline();
-    tl.to(".choice-container", {
+    gsap.to(".rose-stage", {
       opacity: 0,
       scale: 0.95,
-      duration: 0.6,
+      duration: 0.8,
       ease: "power2.inOut",
+      onComplete: () => {
+        onNavigateToStory();
+      }
     });
-    tl.to(".rose-bg", {
-      opacity: 0,
-      duration: 0.4,
-      ease: "power2.out",
-    }, "-=0.3");
-    tl.to(".rose-stage", {
-      opacity: 0,
-      duration: 0.3,
-      ease: "power2.out",
-      onComplete: () => router.push("/gallery/v3")
-    }, "-=0.2");
   };
 
   const showComingSoon = () => {
@@ -710,7 +445,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
           <span className="heart">♥</span>
         </div>
         
-        {/* 添加装饰性光圈 */}
         <div className="deco-orbs">
           <div className="orb orb-1"></div>
           <div className="orb orb-2"></div>
@@ -719,7 +453,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
       </div>
 
       <div className="choice-container">
-        {/* 顶部装饰 */}
         <div className="top-decoration">
           <div className="deco-line-top"></div>
           <div className="deco-dot"></div>
@@ -729,7 +462,6 @@ function ChoiceScreen({ show }: { show: boolean }) {
         <h2 className="choice-title">选择你的旅程</h2>
         <p className="choice-subtitle">Choose Your Journey</p>
         
-        {/* 中间装饰引导线 */}
         <div className="journey-path">
           <svg width="100%" height="80" viewBox="0 0 800 80" preserveAspectRatio="xMidYMid meet">
             <path 
@@ -779,6 +511,32 @@ function ChoiceScreen({ show }: { show: boolean }) {
               <span>🚧 施工中</span>
             </div>
           </button>
+
+          <button onClick={showComingSoon} className="choice-btn disabled">
+            <div className="btn-bg"></div>
+            <div className="btn-content">
+              <div className="btn-icon">🏠</div>
+              <h3 className="btn-title">智能生活小助手</h3>
+              <p className="btn-desc">Your Personal Life Assistant</p>
+              <div className="btn-detail">敬请期待</div>
+            </div>
+            <div className="construction-badge">
+              <span>🚧 施工中</span>
+            </div>
+          </button>
+
+          <button onClick={showComingSoon} className="choice-btn disabled">
+            <div className="btn-bg"></div>
+            <div className="btn-content">
+              <div className="btn-icon">💼</div>
+              <h3 className="btn-title">智能工作小助手</h3>
+              <p className="btn-desc">Your Professional Work Assistant</p>
+              <div className="btn-detail">敬请期待</div>
+            </div>
+            <div className="construction-badge">
+              <span>🚧 施工中</span>
+            </div>
+          </button>
         </div>
 
         <div className="choice-footer">
@@ -790,6 +548,7 @@ function ChoiceScreen({ show }: { show: boolean }) {
     </div>
   );
 }
+
 
 function Gate({ onUnlock, onParticleComplete }: { onUnlock: () => void; onParticleComplete: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -867,6 +626,7 @@ function Gate({ onUnlock, onParticleComplete }: { onUnlock: () => void; onPartic
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
   }, []);
+
 
   const createParticleExplosion = () => {
     const canvas = canvasRef.current;
@@ -948,13 +708,6 @@ function Gate({ onUnlock, onParticleComplete }: { onUnlock: () => void; onPartic
       ease: "power4.in"
     });
 
-    // 不要淡出背景，让它保持，避免黑屏闪现
-    // gsap.to(".gate-bg", {
-    //   opacity: 0,
-    //   duration: 1.5,
-    //   ease: "power2.inOut"
-    // });
-
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -994,7 +747,6 @@ function Gate({ onUnlock, onParticleComplete }: { onUnlock: () => void; onPartic
       if (aliveCount > 0) {
         requestAnimationFrame(animate);
       } else {
-        // 粒子消散完成，淡出整个Gate组件（包括背景）
         gsap.to(".gate-overlay", {
           opacity: 0,
           duration: 0.6,
