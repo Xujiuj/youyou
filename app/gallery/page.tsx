@@ -1,624 +1,986 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import gsap from "gsap";
 import { Observer } from "gsap/Observer";
 import "./gallery.css";
 
-// 场景数据 - 每张照片配三段文字
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(Observer);
+}
+
 const SCENES = [
-  {
-    img: "/her.png",
-    svg: "/ref/her.svg",
-    title: "初见",
-    poem: ["那一刻星辰坠入眼眸", "时间忘记了流动", "世界只剩下你的轮廓"],
-    story: "有些相遇，是命运在人海中精心安排的奇迹。当我第一次看见你，仿佛整个宇宙都在那一瞬间静止，只为让我记住你的模样。"
-  },
-  {
-    img: "/her3.png",
-    svg: "/ref/her3.svg",
-    title: "心动",
-    poem: ["风很温柔", "像你第一次叫我的名字", "从此我的名字有了意义"],
-    story: "心动是什么感觉？是听到你的声音会不自觉微笑，是想到你就觉得世界都变得柔软，是愿意为你变成更好的人。"
-  },
-  {
-    img: "/her4.png",
-    svg: "/ref/her4.svg",
-    title: "陪伴",
-    poem: ["路灯学会了浪漫", "只照亮你走过的路", "我学会了等待"],
-    story: "最好的爱情不是轰轰烈烈，而是细水长流的陪伴。每一个平凡的日子，因为有你，都变成了值得珍藏的回忆。"
-  },
-  {
-    img: "/her5.png",
-    svg: "/ref/her5.svg",
-    title: "默契",
-    poem: ["时间煮雨", "我们煮茶", "岁月在杯中生香"],
-    story: "不用言语，一个眼神就能懂得彼此。这种默契，是我们用无数个日夜培养出的专属语言。"
-  },
-  {
-    img: "/her6.png",
-    svg: "/ref/her6.svg",
-    title: "信任",
-    poem: ["不用回头", "我知道你一直在身后", "这是最安心的距离"],
-    story: "信任是爱情最珍贵的礼物。因为相信你，我可以勇敢地向前走，因为我知道，无论发生什么，你都会在那里。"
-  },
-  {
-    img: "/her7.png",
-    svg: "/ref/her7.svg",
-    title: "宠溺",
-    poem: ["我的超能力", "是让你永远做个孩子", "被世界温柔以待"],
-    story: "想把所有的温柔都给你，想让你永远保持那份纯真的笑容。在我这里，你可以任性，可以撒娇，可以做最真实的自己。"
-  },
-  {
-    img: "/her8.png",
-    svg: "/ref/her8.svg",
-    title: "誓言",
-    poem: ["想把所有美好的词", "都兑换成你", "写进余生的每一页"],
-    story: "我不会说太多华丽的情话，但我想用一生的时间，把每一个承诺都变成现实。你值得世间所有的美好。"
-  },
-  {
-    img: "/her9.png",
-    svg: "/ref/her9.svg",
-    title: "永恒",
-    poem: ["这一生很长", "好在有你", "闪闪发光"],
-    story: "未来的路还很长，但只要牵着你的手，每一步都是风景。感谢命运让我遇见你，让我的生命从此有了光。"
-  },
+  { img: "/her.png", svg: "/ref/her.svg", title: "初见", titleEn: "SERENDIPITY", poem: ["那一刻星辰坠入眼眸", "时间忘记了流动", "世界只剩下你的轮廓"], story: "相遇很奇妙，不常用抖音的我在某一个夜晚突然被一束光照亮，一切仿佛静止。", accent: "#ff74b7" },
+  { img: "/her3.png", svg: "/ref/her3.svg", title: "心动", titleEn: "FLUTTER", poem: ["似被暖阳照射", "网络不再虚妄", "从此我敲出的0与1都有了意义"], story: "心动是什么感觉？我想是我压不住的嘴角，是想到你就觉得世界都变得柔软，是想在方方面面成为更好的人。", accent: "#e8a0bf" },
+  { img: "/her4.png", svg: "/ref/her4.svg", title: "陪伴", titleEn: "INTIMACY", poem: ["掌间流出了浪漫", "浮萍有了归属", "心中多了想象和期待"], story: "这真的是一种奇怪的感觉，对于一向直来直去的我，无法清晰描述那种期待和悸动到底是一种什么感觉。", accent: "#d4a5c9" },
+  { img: "/her5.png", svg: "/ref/her5.svg", title: "暖光", titleEn: "LIGHT", poem: ["你眼中有光柔和而明媚", "如晨曦初透", "温暖照耀未知世界"], story: "你眼里有光，这光只存于善良与清澈，未被尘世污浊之人眼中，我想要尽我一切，留住这份光。", accent: "#c9a0dc" },
+  { img: "/her6.png", svg: "/ref/her6.svg", title: "勇气", titleEn: "BRAVE", poem: ["心动打破了长久的沉默", "炽热融化了尘封的冰川", "浪漫胜过了理智的计算"], story: "你曾说，把我的勇气留下，留给未来，但我觉得，计算不应该放在这里，你是所有的值得。", accent: "#b8a0e8" },
+  { img: "/her7.png", svg: "/ref/her7.svg", title: "沉沦", titleEn: "INDULGE", poem: ["想尽一切能力", "让你永远做个小朋友", "被世界上的一切美好包围"], story: "把一切交予给你，想让你永远保持那份纯真的笑容，想让你永远可以做真实的自己。", accent: "#ffb3c6" },
+  { img: "/her8.png", svg: "/ref/her8.svg", title: "誓言", titleEn: "VOW", poem: ["穷尽我脑海中的一切想象与美好", "兑换成你", "写进未来的每一页"], story: "现在不会说太动人的话，也没有太高的情商，只能在付诸行动的过程中，不断完善我的方方面面。", accent: "#ff8fab" },
+  { img: "/her9.png", svg: "/ref/her9.svg", title: "永恒", titleEn: "ETERNITY", poem: ["未来漫长", "可否和你", "共赴光芒"], story: "未来的路还很长，但我想，美好的事情已经发生，带着滤镜，我想会更加简单快乐。", accent: "#ffc2d1" },
 ];
 
 export default function GalleryPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [pageReady, setPageReady] = useState(false);
+  const [showEnding, setShowEnding] = useState(false);
+  const currentIndexRef = useRef(0);
+  const isTransitioningRef = useRef(false);
 
-  // 初始化粒子背景
+  useEffect(() => {
+    const timer = setTimeout(() => setPageReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  useEffect(() => {
+    isTransitioningRef.current = isTransitioning;
+  }, [isTransitioning]);
+
+  const go = useCallback((dir: 1 | -1) => {
+    if (!pageReady || isTransitioningRef.current || showEnding) return;
+    const next = currentIndexRef.current + dir;
+    if (next < 0 || next > SCENES.length - 1) {
+      if (next === SCENES.length && currentIndexRef.current === SCENES.length - 1) {
+        setShowEnding(true);
+      }
+      return;
+    }
+    isTransitioningRef.current = true;
+    setIsTransitioning(true);
+    setCurrentIndex(next);
+  }, [pageReady, showEnding]);
+
+  useEffect(() => {
+    if (!pageReady || showEnding) return;
+    const obs = Observer.create({
+      target: window,
+      type: "wheel,touch,pointer",
+      wheelSpeed: -1,
+      tolerance: 60,
+      preventDefault: true,
+      onDown: () => go(-1),
+      onUp: () => go(1),
+    });
+    return () => obs.kill();
+  }, [go, pageReady, showEnding]);
+
+  useEffect(() => {
+    if (!pageReady) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (["ArrowDown", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); go(1); }
+      else if (["ArrowUp", "ArrowLeft"].includes(e.key)) { e.preventDefault(); go(-1); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [go, pageReady]);
+
+  const handleComplete = useCallback(() => {
+    isTransitioningRef.current = false;
+    setIsTransitioning(false);
+  }, []);
+  const scene = SCENES[currentIndex];
+  const renderIndexes = [currentIndex - 1, currentIndex, currentIndex + 1].filter(i => i >= 0 && i < SCENES.length);
+
+  return (
+    <div className={`gallery-stage ${pageReady ? "ready" : ""}`} style={{ "--accent": scene.accent } as React.CSSProperties}>
+      <div className="gallery-bg">
+        <div className="gallery-gradient" />
+        <MeteorCanvas />
+        <div className="gallery-vignette" />
+      </div>
+
+      {!showEnding && renderIndexes.map((i) => (
+        <Scene key={i} scene={SCENES[i]} index={i} currentIndex={currentIndex} onComplete={handleComplete} pageReady={pageReady} onLastComplete={i === SCENES.length - 1 && currentIndex === i ? () => setShowEnding(true) : undefined} />
+      ))}
+
+      <nav className="gallery-nav">
+        <div className="gallery-nav-progress"><div className="gallery-nav-fill" style={{ width: `${((currentIndex + 1) / SCENES.length) * 100}%` }} /></div>
+        <div className="gallery-nav-dots">{SCENES.map((s, i) => <div key={i} className={`gallery-nav-dot ${i === currentIndex ? "active" : ""}`}><span className="gallery-nav-label">{s.title}</span></div>)}</div>
+      </nav>
+
+      <footer className="gallery-footer">
+        <button className="gallery-back-btn" onClick={() => window.location.href = "/"} title="返回">
+          <span>←</span>
+        </button>
+        <div className="gallery-footer-num"><span className="current">{String(currentIndex + 1).padStart(2, "0")}</span><span className="sep">/</span><span className="total">{String(SCENES.length).padStart(2, "0")}</span></div>
+        <div className="gallery-footer-title">{scene.titleEn}</div>
+        {currentIndex < SCENES.length - 1 && <div className="gallery-footer-hint">↓ scroll</div>}
+      </footer>
+
+      {showEnding && <EndingPage lastScene={SCENES[SCENES.length - 1]} />}
+    </div>
+  );
+}
+
+// 流星特效Canvas - 简化版，与SVG绘制时减少冲突
+function MeteorCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
+    
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener("resize", resize);
+    
+    const meteors: Array<{
+      x: number;
+      y: number;
+      length: number;
+      speed: number;
+      angle: number;
+    }> = [];
+    
+    const createMeteor = () => {
+      const startX = Math.random() * canvas.width;
+      const startY = -50;
+      const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+      const speed = 2.5 + Math.random() * 2.5;
+      const length = 50 + Math.random() * 30;
+      
+      meteors.push({
+        x: startX,
+        y: startY,
+        length,
+        speed,
+        angle
+      });
+    };
+    
+    let animId: number;
+    let lastTime = 0;
+    const targetFPS = 30;
+    const frameInterval = 1000 / targetFPS;
+    
+    const animate = (currentTime: number = 0) => {
+      if (currentTime - lastTime < frameInterval) {
+        animId = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = currentTime;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      if (Math.random() < 0.025 && meteors.length < 3) {
+        createMeteor();
+      }
+      
+      meteors.forEach((meteor, index) => {
+        const dx = Math.cos(meteor.angle) * meteor.speed;
+        const dy = Math.sin(meteor.angle) * meteor.speed;
+        
+        meteor.x += dx;
+        meteor.y += dy;
+        
+        ctx.save();
+        const gradient = ctx.createLinearGradient(
+          meteor.x - Math.cos(meteor.angle) * meteor.length,
+          meteor.y - Math.sin(meteor.angle) * meteor.length,
+          meteor.x,
+          meteor.y
+        );
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+        gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.4)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0.8)");
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
+        
+        ctx.beginPath();
+        ctx.moveTo(meteor.x, meteor.y);
+        ctx.lineTo(meteor.x - Math.cos(meteor.angle) * meteor.length, meteor.y - Math.sin(meteor.angle) * meteor.length);
+        ctx.stroke();
+        ctx.restore();
+        
+        if (meteor.y > canvas.height + 100 || meteor.x < -100 || meteor.x > canvas.width + 100) {
+          meteors.splice(index, 1);
+        }
+      });
+      
+      animId = requestAnimationFrame(animate);
+    };
+    
+    animId = requestAnimationFrame(animate);
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+  
+  return <canvas ref={canvasRef} className="gallery-particles" />;
+}
 
-    // 星尘粒子
+// 直接加载 SVG 并做路径绘制动画
+const PortraitSketch = memo(function PortraitSketch({ svgSrc, accent, isActive, onComplete }: { svgSrc: string; accent: string; isActive: boolean; onComplete?: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const animRef = useRef<gsap.core.Timeline | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // 清理旧动画
+    if (animRef.current) {
+      animRef.current.kill();
+      animRef.current = null;
+    }
+
+    if (isActive) {
+      // 加载 SVG
+      fetch(svgSrc)
+        .then(res => res.text())
+        .then(svgText => {
+          if (!containerRef.current) return;
+          
+          // 插入 SVG
+          container.innerHTML = svgText;
+          const svg = container.querySelector("svg");
+          if (!svg) return;
+          
+          svgRef.current = svg;
+          svg.classList.add("gallery-sketch-svg");
+          
+          const originalWidth = svg.getAttribute("width");
+          const originalHeight = svg.getAttribute("height");
+          
+          if (!svg.hasAttribute("viewBox")) {
+            let width = originalWidth ? parseFloat(originalWidth.replace(/px|pt|em|rem/, '')) : 800;
+            let height = originalHeight ? parseFloat(originalHeight.replace(/px|pt|em|rem/, '')) : 1344;
+            if (!width || !height) {
+              const rect = svg.getBoundingClientRect();
+              width = width || rect.width || 800;
+              height = height || rect.height || 1344;
+            }
+            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+          }
+          
+          svg.removeAttribute("width");
+          svg.removeAttribute("height");
+          svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+          
+          // 获取所有路径元素
+          const paths = svg.querySelectorAll("path, line, polyline, polygon, circle, ellipse, rect");
+          
+          if (paths.length === 0) {
+            // 如果没有路径，直接显示
+            gsap.to(container, { opacity: 1, duration: 0.5 });
+            if (onComplete) setTimeout(onComplete, 500);
+            return;
+          }
+
+          // 设置路径样式并准备动画
+          paths.forEach((path) => {
+            const el = path as SVGGeometryElement;
+            
+            const fill = el.getAttribute("fill") || window.getComputedStyle(el).fill;
+            const fillColor = fill ? fill.toLowerCase() : "";
+            
+            let shouldHide = false;
+            let opacity = 1;
+            
+            if (fillColor) {
+              if (fillColor.startsWith("#ff") || fillColor.startsWith("rgb(255")) {
+                try {
+                  const box = el.getBBox();
+                  const centerY = box.y + box.height / 2;
+                  const area = box.width * box.height;
+                  
+                  if (centerY > 200 && centerY < 600 && area < 5000) {
+                    shouldHide = true;
+                  } else if (centerY > 200 && centerY < 600) {
+                    opacity = 0.15;
+                  }
+                } catch {
+                  if (fillColor.startsWith("#ff")) {
+                    opacity = 0.2;
+                  }
+                }
+              }
+            }
+            
+            if (shouldHide) {
+              el.style.display = "none";
+              return;
+            }
+            
+            if (opacity < 1) {
+              el.style.opacity = String(opacity);
+            }
+            
+            el.style.filter = `drop-shadow(0 0 8px ${accent})`;
+            
+            const stroke = window.getComputedStyle(el).stroke;
+            if (stroke && stroke !== "none") {
+              try {
+                const length = el.getTotalLength?.() || 1000;
+                el.style.strokeDasharray = `${length}`;
+                el.style.strokeDashoffset = `${length}`;
+              } catch {
+              }
+            }
+            
+            gsap.set(el, { opacity: 0 });
+          });
+
+          gsap.set(container, { opacity: 1 });
+
+          const pathArray = Array.from(paths).filter((path) => {
+            const el = path as SVGGeometryElement;
+            return el.style.display !== "none";
+          });
+          
+          pathArray.sort((a, b) => {
+            const aEl = a as SVGGeometryElement;
+            const bEl = b as SVGGeometryElement;
+            
+            try {
+              const aBox = aEl.getBBox();
+              const bBox = bEl.getBBox();
+              
+              const aCenterY = aBox.y + aBox.height / 2;
+              const bCenterY = bBox.y + bBox.height / 2;
+              
+              if (Math.abs(aCenterY - bCenterY) < 20) {
+                const aArea = aBox.width * aBox.height;
+                const bArea = bBox.width * bBox.height;
+                return bArea - aArea;
+              }
+              
+              return aCenterY - bCenterY;
+            } catch {
+              return 0;
+            }
+          });
+          
+          const batchSize = Math.max(1, Math.floor(pathArray.length / 3));
+          
+          const tl = gsap.timeline({
+            onComplete: () => {
+              if (onComplete) setTimeout(onComplete, 100);
+            }
+          });
+          animRef.current = tl;
+          
+          pathArray.forEach((path, i) => {
+            const el = path as SVGGeometryElement;
+            const batchIndex = Math.floor(i / batchSize);
+            const batchDelay = batchIndex * 0.04;
+            const itemDelay = (i % batchSize) * 0.006;
+            const delay = batchDelay + itemDelay;
+            
+            const stroke = window.getComputedStyle(el).stroke;
+            const hasStroke = stroke && stroke !== "none";
+            
+            gsap.set(el, { scale: 0.98, opacity: 0 });
+            
+            try {
+              const box = el.getBBox();
+              const centerY = box.y + box.height / 2;
+              const isFaceArea = centerY > 200 && centerY < 600;
+              
+              if (hasStroke) {
+                try {
+                  const length = el.getTotalLength?.() || 1000;
+                  el.style.strokeDasharray = `${length}`;
+                  el.style.strokeDashoffset = `${length}`;
+                  tl.to(el, { 
+                    strokeDashoffset: 0, 
+                    duration: isFaceArea ? 0.8 : 1.0 + (i % 3) * 0.15, 
+                    ease: isFaceArea ? "sine.inOut" : "power2.out"
+                  }, delay);
+                } catch {}
+              }
+              
+              tl.to(el, { 
+                opacity: 1,
+                scale: 1,
+                rotation: isFaceArea ? 0 : 0,
+                duration: hasStroke ? (isFaceArea ? 0.7 : 0.9) : (isFaceArea ? 0.6 : 0.8), 
+                ease: isFaceArea ? "sine.out" : "power2.out"
+              }, delay + (hasStroke ? 0.05 : 0));
+            } catch {
+              if (hasStroke) {
+                try {
+                  const length = el.getTotalLength?.() || 1000;
+                  el.style.strokeDasharray = `${length}`;
+                  el.style.strokeDashoffset = `${length}`;
+                  tl.to(el, { 
+                    strokeDashoffset: 0, 
+                    duration: 1.2, 
+                    ease: "sine.inOut"
+                  }, delay);
+                } catch {}
+              }
+              
+              tl.to(el, { 
+                opacity: 1,
+                scale: 1,
+                rotation: 0,
+                duration: hasStroke ? 1 : 0.9, 
+                ease: "sine.out"
+              }, delay + (hasStroke ? 0.1 : 0));
+            }
+          });
+
+          gsap.set(svg, { scale: 0.98 });
+          tl.to(svg, {
+            filter: `drop-shadow(0 0 20px ${accent})`,
+            scale: 1,
+            duration: 1,
+            ease: "elastic.out(1, 0.4)"
+          }, "-=0.5");
+
+        })
+        .catch(err => {
+          console.error("Failed to load SVG:", err);
+          if (onComplete) onComplete();
+        });
+
+    } else {
+      // 淡出
+      gsap.to(container, { opacity: 0, duration: 0.2 });
+    }
+
+    return () => {
+      if (animRef.current) {
+        animRef.current.kill();
+        animRef.current = null;
+      }
+    };
+  }, [isActive, svgSrc, accent, onComplete]);
+
+  return <div ref={containerRef} className="gallery-sketch-container" />;
+});
+
+// 照片组件
+function PhotoWithGlow({ src, accent }: { src: string; accent: string }) {
+  return (
+    <div className="gallery-photo-container">
+      <img src={src} alt="" className="gallery-photo" />
+      <div className="gallery-photo-glow" style={{ background: `radial-gradient(ellipse, ${accent}30 0%, transparent 70%)` }} />
+    </div>
+  );
+}
+
+// 场景组件
+function Scene({ scene, index, currentIndex, onComplete, pageReady, onLastComplete }: {
+  scene: (typeof SCENES)[0]; index: number; currentIndex: number; onComplete: () => void; pageReady: boolean; onLastComplete?: () => void;
+}) {
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const photoWrapperRef = useRef<HTMLDivElement>(null);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+  const tlRef = useRef<gsap.core.Timeline | null>(null);
+  const textStartedRef = useRef(false);
+
+  const isActive = index === currentIndex;
+
+  const handleSketchComplete = useCallback(() => {
+    if (!contentAreaRef.current || textStartedRef.current) return;
+    textStartedRef.current = true;
+    
+    if (index === currentIndex && currentIndex === SCENES.length - 1 && onLastComplete) {
+      setTimeout(() => {
+        onLastComplete();
+      }, 4000);
+    }
+
+    const titleEn = contentAreaRef.current.querySelector(".gallery-title-en");
+    const titleCn = contentAreaRef.current.querySelector(".gallery-title-cn");
+    const titleLine = contentAreaRef.current.querySelector(".gallery-title-line");
+    const poemLines = contentAreaRef.current.querySelectorAll(".gallery-poem-line");
+    const storyBlock = contentAreaRef.current.querySelector(".gallery-story-block");
+
+    const textTl = gsap.timeline();
+
+    if (titleEn) {
+      gsap.set(titleEn, { scale: 0.9, rotationX: -15 });
+      textTl.to(titleEn, { 
+        x: 0, 
+        opacity: 1,
+        scale: 1,
+        rotationX: 0,
+        duration: 1.2, 
+        ease: "back.out(1.2)" 
+      }, 0);
+    }
+    
+    if (titleCn) {
+      gsap.set(titleCn, { scale: 0.92 });
+      textTl.to(titleCn, { 
+        y: 0, 
+        opacity: 1,
+        scale: 1,
+        duration: 1.3, 
+        ease: "elastic.out(1, 0.5)" 
+      }, 0.2);
+    }
+    
+    if (titleLine) {
+      textTl.to(titleLine, { 
+        scaleX: 1, 
+        duration: 1.2, 
+        ease: "power3.inOut" 
+      }, 0.5);
+    }
+    
+    if (poemLines?.length) {
+      poemLines.forEach((line, i) => {
+        gsap.set(line, { x: -20 * (i % 2 === 0 ? 1 : -1), scale: 0.95 });
+      });
+      textTl.to(poemLines, { 
+        opacity: 1, 
+        y: 0,
+        x: 0,
+        scale: 1,
+        duration: 1.1, 
+        stagger: {
+          amount: 0.6,
+          from: "start",
+          ease: "power2.inOut"
+        },
+        ease: "back.out(1.1)" 
+      }, 0.7);
+    }
+    
+    if (storyBlock) {
+      gsap.set(storyBlock, { scale: 0.96, rotationY: 5 });
+      textTl.to(storyBlock, { 
+        opacity: 1, 
+        y: 0,
+        scale: 1,
+        rotationY: 0,
+        duration: 1.4, 
+        ease: "power2.out" 
+      }, 1.2);
+    }
+  }, [index, currentIndex, onLastComplete]);
+
+  useEffect(() => {
+    if (!sceneRef.current || !pageReady) return;
+    tlRef.current?.kill();
+    gsap.killTweensOf([photoWrapperRef.current, contentAreaRef.current]);
+    textStartedRef.current = false;
+
+    if (isActive) {
+      gsap.set(sceneRef.current, { visibility: "visible", zIndex: 10 });
+      gsap.set([photoWrapperRef.current, contentAreaRef.current], { opacity: 1, clearProps: "filter" });
+      gsap.set(photoWrapperRef.current, { y: 0 });
+      const tl = gsap.timeline({ onComplete });
+      tlRef.current = tl;
+
+      tl.fromTo(photoWrapperRef.current,
+        { scale: 0.96, opacity: 0, y: 18 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
+        0
+      );
+
+      const delayText = typeof window !== "undefined" && !window.matchMedia("(max-width: 1200px)").matches;
+      if (contentAreaRef.current) {
+        const titleEn = contentAreaRef.current.querySelector(".gallery-title-en");
+        const titleCn = contentAreaRef.current.querySelector(".gallery-title-cn");
+        const titleLine = contentAreaRef.current.querySelector(".gallery-title-line");
+        const poemLines = contentAreaRef.current.querySelectorAll(".gallery-poem-line");
+        const storyBlock = contentAreaRef.current.querySelector(".gallery-story-block");
+
+        if (titleEn) gsap.set(titleEn, { x: -30, opacity: 0, scale: 0.9, rotationX: -15 });
+        if (titleCn) gsap.set(titleCn, { y: 20, opacity: 0, scale: 0.92 });
+        if (titleLine) gsap.set(titleLine, { scaleX: 0, transformOrigin: "left" });
+        if (poemLines?.length) {
+          poemLines.forEach((line: Element, i: number) => {
+            gsap.set(line, { opacity: 0, y: 15, x: -20 * (i % 2 === 0 ? 1 : -1), scale: 0.95 });
+          });
+        }
+        if (storyBlock) gsap.set(storyBlock, { opacity: 0, y: 10, scale: 0.96, rotationY: 5 });
+
+        if (!delayText) {
+          if (titleEn) tl.to(titleEn, { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.2);
+          if (titleCn) tl.to(titleCn, { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" }, 0.3);
+          if (titleLine) tl.to(titleLine, { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.5);
+          if (poemLines?.length) tl.to(poemLines, { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power2.out" }, 0.6);
+          if (storyBlock) tl.to(storyBlock, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.9);
+        }
+      }
+
+      gsap.to(photoWrapperRef.current, { y: 6, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1, delay: 1 });
+
+    } else {
+      const tl = gsap.timeline();
+      tlRef.current = tl;
+
+      tl.to([photoWrapperRef.current, contentAreaRef.current], {
+        opacity: 0,
+        duration: 0.5,
+        ease: "power2.in"
+      }, 0);
+
+      tl.set(sceneRef.current, { visibility: "hidden", zIndex: 0 });
+    }
+
+    return () => { tlRef.current?.kill(); gsap.killTweensOf([photoWrapperRef.current, contentAreaRef.current]); };
+  }, [isActive, onComplete, pageReady]);
+
+  return (
+    <div ref={sceneRef} className="gallery-scene" style={{ visibility: isActive ? "visible" : "hidden" }}>
+      <div className="gallery-photo-area">
+        <div ref={photoWrapperRef} className="gallery-photo-wrapper">
+          <PhotoWithGlow src={scene.img} accent={scene.accent} />
+        </div>
+      </div>
+
+      <div ref={contentAreaRef} className="gallery-content-area">
+        <div className="gallery-title-block">
+          <span className="gallery-title-en">{scene.titleEn}</span>
+          <h2 className="gallery-title-cn">{scene.title}</h2>
+          <div className="gallery-title-line" />
+        </div>
+        <div className="gallery-poem-block">
+          {scene.poem.map((line, i) => (
+            <div key={i} className="gallery-poem-line">
+              <span className="gallery-poem-marker">—</span>
+              <span className="gallery-poem-text">{line}</span>
+            </div>
+          ))}
+        </div>
+        <div className="gallery-story-block">
+          <p>{scene.story}</p>
+        </div>
+      </div>
+
+      <div className="gallery-svg-area">
+        <PortraitSketch svgSrc={scene.svg} accent={scene.accent} isActive={isActive} onComplete={handleSketchComplete} />
+      </div>
+    </div>
+  );
+}
+
+// 结束页面组件
+function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const letterRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    const letter = letterRef.current;
+    if (!container || !canvas || !letter) return;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    // 照片到书信的转换动画
+    gsap.set(letter, { opacity: 0, scale: 0.85, y: 60 });
+    
+    // 存储原始文本并清空
+    const textBlocks = letter.querySelectorAll(".gallery-ending-text p");
+    const originalTexts: string[] = [];
+    textBlocks.forEach((block) => {
+      originalTexts.push(block.textContent || "");
+      block.textContent = "";
+      gsap.set(block, { opacity: 0 });
+    });
+    
+    gsap.to(letter, {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      duration: 1.8,
+      ease: "power3.out",
+      delay: 0.6,
+      onComplete: () => {
+        // 打字机效果 - 所有行同时开始，每行逐字显示
+        textBlocks.forEach((block, index) => {
+          const originalText = originalTexts[index];
+          if (!originalText) return;
+          
+          gsap.set(block, { opacity: 1 });
+          
+          let charIndex = 0;
+          const typeInterval = setInterval(() => {
+            if (charIndex < originalText.length) {
+              block.textContent = originalText.substring(0, charIndex + 1);
+              charIndex++;
+            } else {
+              clearInterval(typeInterval);
+            }
+          }, 50 + Math.random() * 30);
+        });
+      }
+    });
+    
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    
+    // 烟花粒子系统
+    const fireworks: Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      color: string;
+      trail: Array<{ x: number; y: number; opacity: number }>;
+      targetY: number;
+      exploded: boolean;
+    }> = [];
+    
     const particles: Array<{
       x: number;
       y: number;
       vx: number;
       vy: number;
+      life: number;
+      color: string;
       size: number;
-      opacity: number;
-      twinkle: number;
+      decay: number;
     }> = [];
-
-    for (let i = 0; i < 200; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 2 + 0.5,
-        opacity: Math.random() * 0.5 + 0.2,
-        twinkle: Math.random() * Math.PI * 2,
+    
+    const createFirework = () => {
+      const x = Math.random() * canvas.width;
+      const targetY = canvas.height * 0.2 + Math.random() * canvas.height * 0.25;
+      const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2"];
+      
+      fireworks.push({
+        x,
+        y: canvas.height + 10,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: -16 - Math.random() * 6,
+        life: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        trail: [],
+        targetY,
+        exploded: false
       });
-    }
-
-    let animationId: number;
-    const animate = () => {
+    };
+    
+    const explodeFirework = (firework: typeof fireworks[0]) => {
+      const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2", "#ffc0cb"];
+      const particleCount = 120 + Math.floor(Math.random() * 60);
+      
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.4;
+        const speed = 5 + Math.random() * 7;
+        const size = 2.5 + Math.random() * 4;
+        
+        particles.push({
+          x: firework.x,
+          y: firework.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size,
+          decay: 0.018 + Math.random() * 0.012
+        });
+      }
+    };
+    
+    // SVG线条闪现
+    const svgPaths: Array<{ path: string; x: number; y: number; opacity: number; life: number }> = [];
+    const svgFiles = SCENES.map(s => s.svg);
+    
+    const createSVGLine = async () => {
+      if (svgPaths.length > 3) return;
+      
+      const svgFile = svgFiles[Math.floor(Math.random() * svgFiles.length)];
+      try {
+        const response = await fetch(svgFile);
+        const svgText = await response.text();
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+        const allPaths = Array.from(svgDoc.querySelectorAll("path"));
+        
+        if (allPaths.length > 0) {
+          const pathEl = allPaths[Math.floor(Math.random() * allPaths.length)];
+          const pathData = pathEl.getAttribute("d");
+          
+          if (pathData) {
+            svgPaths.push({
+              path: pathData,
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              opacity: 1,
+              life: 2000 + Math.random() * 1000
+            });
+          }
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    };
+    
+    let animId: number;
+    let lastTime = performance.now();
+    let fireworkTimer = 0;
+    let svgTimer = 0;
+    
+    const animate = (currentTime: number) => {
+      const delta = currentTime - lastTime;
+      lastTime = currentTime;
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
+      
+      // 烟花
+      fireworkTimer += delta;
+      if (fireworkTimer > 1200 + Math.random() * 1800) {
+        fireworkTimer = 0;
+        createFirework();
+      }
+      
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        const fw = fireworks[i];
+        if (fw.exploded) continue;
+        
+        if (fw.y > fw.targetY) {
+          fw.x += fw.vx;
+          fw.y += fw.vy;
+          fw.vy += 0.35;
+          fw.life -= 0.003;
+          
+          const trailOpacity = fw.life * 0.9;
+          fw.trail.push({ x: fw.x, y: fw.y, opacity: trailOpacity });
+          if (fw.trail.length > 25) fw.trail.shift();
+          
+          ctx.save();
+          ctx.strokeStyle = fw.color;
+          ctx.lineWidth = 5;
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = fw.color;
+          
+          for (let j = 0; j < fw.trail.length - 1; j++) {
+            const p1 = fw.trail[j];
+            const p2 = fw.trail[j + 1];
+            ctx.globalAlpha = p1.opacity * 0.7;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        
+        if (fw.y <= fw.targetY && !fw.exploded) {
+          fw.exploded = true;
+          explodeFirework(fw);
+          fireworks.splice(i, 1);
+        }
+      }
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.twinkle += 0.02;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        const twinkleOpacity = p.opacity * (0.5 + 0.5 * Math.sin(p.twinkle));
-
+        p.vy += 0.22;
+        p.vx *= 0.96;
+        p.life -= p.decay;
+        
+        if (p.life <= 0 || p.y > canvas.height + 50) {
+          particles.splice(i, 1);
+          continue;
+        }
+        
         ctx.save();
-        ctx.globalAlpha = twinkleOpacity;
-        ctx.fillStyle = "#fff";
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "rgba(255, 182, 193, 0.8)";
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+        gradient.addColorStop(0, p.color);
+        gradient.addColorStop(0.7, p.color + "80");
+        gradient.addColorStop(1, "transparent");
+        ctx.fillStyle = gradient;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = p.color;
+        ctx.globalAlpha = p.life;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+      }
+      
+      // SVG线条
+      svgTimer += delta;
+      if (svgTimer > 1500 + Math.random() * 1500) {
+        svgTimer = 0;
+        createSVGLine();
+      }
+      
+      svgPaths.forEach((svgPath, i) => {
+        svgPath.life -= delta;
+        svgPath.opacity = Math.min(1, svgPath.life / 1000);
+        
+        if (svgPath.life <= 0) {
+          svgPaths.splice(i, 1);
+          return;
+        }
+        
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 182, 193, 0.6)";
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = svgPath.opacity * 0.4;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "rgba(255, 182, 193, 0.8)";
+        
+        try {
+          const path2d = new Path2D(svgPath.path);
+          ctx.translate(svgPath.x, svgPath.y);
+          ctx.scale(0.3, 0.3);
+          ctx.stroke(path2d);
+        } catch (e) {
+          // Silent fail
+        }
+        
+        ctx.restore();
       });
-
-      animationId = requestAnimationFrame(animate);
+      
+      animId = requestAnimationFrame(animate);
     };
-    animate();
-
+    
+    animId = requestAnimationFrame(animate);
+    
     return () => {
       window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animationId);
+      cancelAnimationFrame(animId);
     };
   }, []);
-
-  // 滚动/滑动控制
-  useEffect(() => {
-    gsap.registerPlugin(Observer);
-
-    const obs = Observer.create({
-      target: window,
-      type: "wheel,touch,pointer",
-      wheelSpeed: -1,
-      tolerance: 50,
-      preventDefault: true,
-      onDown: () => {
-        if (!isTransitioning && currentIndex < SCENES.length - 1) {
-          setIsTransitioning(true);
-          setCurrentIndex((i) => i + 1);
-        }
-      },
-      onUp: () => {
-        if (!isTransitioning && currentIndex > 0) {
-          setIsTransitioning(true);
-          setCurrentIndex((i) => i - 1);
-        }
-      },
-    });
-
-    return () => obs.kill();
-  }, [currentIndex, isTransitioning]);
-
-  // 键盘控制
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isTransitioning) return;
-      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-        if (currentIndex < SCENES.length - 1) {
-          setIsTransitioning(true);
-          setCurrentIndex((i) => i + 1);
-        }
-      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-        if (currentIndex > 0) {
-          setIsTransitioning(true);
-          setCurrentIndex((i) => i - 1);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, isTransitioning]);
-
-  const handleTransitionEnd = useCallback(() => {
-    setIsTransitioning(false);
-  }, []);
-
+  
   return (
-    <div ref={containerRef} className="gallery-stage">
-      {/* 粒子背景 */}
-      <canvas ref={canvasRef} className="gallery-particles" />
-
-      {/* 渐变背景 */}
-      <div className="gallery-gradient-bg" />
-
-      {/* 装饰性SVG元素 */}
-      <DecoElements currentIndex={currentIndex} />
-
-      {/* 场景容器 */}
-      <div className="gallery-scenes">
-        {SCENES.map((scene, index) => (
-          <Scene
-            key={index}
-            scene={scene}
-            index={index}
-            currentIndex={currentIndex}
-            onTransitionEnd={handleTransitionEnd}
-          />
-        ))}
-      </div>
-
-      {/* 进度指示器 */}
-      <ProgressIndicator current={currentIndex} total={SCENES.length} />
-
-      {/* 导航提示 */}
-      <NavigationHint />
-    </div>
-  );
-}
-
-// 单个场景组件
-function Scene({
-  scene,
-  index,
-  currentIndex,
-  onTransitionEnd,
-}: {
-  scene: (typeof SCENES)[0];
-  index: number;
-  currentIndex: number;
-  onTransitionEnd: () => void;
-}) {
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const photoRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<HTMLImageElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const poemRef = useRef<HTMLDivElement>(null);
-  const storyRef = useRef<HTMLParagraphElement>(null);
-  const frameRef = useRef<SVGSVGElement>(null);
-
-  const isActive = index === currentIndex;
-  const isPrev = index < currentIndex;
-
-  useEffect(() => {
-    if (!sceneRef.current) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        onComplete: () => {
-          if (isActive) onTransitionEnd();
-        },
-      });
-
-      if (isActive) {
-        // 进入动画
-        gsap.set(sceneRef.current, { visibility: "visible", zIndex: 10 });
-
-        // 照片容器动画
-        tl.fromTo(
-          photoRef.current,
-          {
-            scale: 1.3,
-            opacity: 0,
-            filter: "blur(20px) brightness(2)",
-          },
-          {
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px) brightness(1)",
-            duration: 1.8,
-            ease: "power3.out",
-          }
-        );
-
-        // SVG线条动画 - 描边效果
-        tl.fromTo(
-          svgRef.current,
-          {
-            opacity: 0,
-            scale: 1.1,
-          },
-          {
-            opacity: 0.6,
-            scale: 1,
-            duration: 1.2,
-            ease: "power2.out",
-          },
-          "-=1.4"
-        );
-
-        // 装饰框架动画
-        tl.fromTo(
-          frameRef.current,
-          { opacity: 0, scale: 0.9 },
-          { opacity: 1, scale: 1, duration: 1, ease: "power2.out" },
-          "-=1"
-        );
-
-        // 标题动画 - 从下方滑入并展开
-        tl.fromTo(
-          titleRef.current,
-          {
-            y: 80,
-            opacity: 0,
-            letterSpacing: "0.5em",
-          },
-          {
-            y: 0,
-            opacity: 1,
-            letterSpacing: "0.3em",
-            duration: 1.2,
-            ease: "power4.out",
-          },
-          "-=0.8"
-        );
-
-        // 诗句逐行显现
-        const poemLines = poemRef.current?.querySelectorAll(".poem-line");
-        if (poemLines) {
-          tl.fromTo(
-            poemLines,
-            {
-              x: -50,
-              opacity: 0,
-            },
-            {
-              x: 0,
-              opacity: 1,
-              duration: 0.8,
-              stagger: 0.2,
-              ease: "power3.out",
-            },
-            "-=0.6"
-          );
-        }
-
-        // 故事文字淡入
-        tl.fromTo(
-          storyRef.current,
-          {
-            y: 30,
-            opacity: 0,
-          },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 1,
-            ease: "power2.out",
-          },
-          "-=0.4"
-        );
-
-        // 持续的微动效果
-        gsap.to(photoRef.current, {
-          y: 10,
-          duration: 4,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-
-        gsap.to(svgRef.current, {
-          opacity: 0.4,
-          duration: 2,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-      } else {
-        // 离开动画
-        const direction = isPrev ? -1 : 1;
-
-        tl.to(
-          [photoRef.current, svgRef.current],
-          {
-            scale: 0.8,
-            opacity: 0,
-            y: direction * -100,
-            filter: "blur(10px)",
-            duration: 0.8,
-            ease: "power2.in",
-          },
-          0
-        );
-
-        tl.to(
-          [titleRef.current, poemRef.current, storyRef.current],
-          {
-            opacity: 0,
-            y: direction * -50,
-            duration: 0.6,
-            ease: "power2.in",
-          },
-          0
-        );
-
-        tl.set(sceneRef.current, { visibility: "hidden", zIndex: 0 });
-      }
-    }, sceneRef);
-
-    return () => ctx.revert();
-  }, [isActive, isPrev, onTransitionEnd]);
-
-  return (
-    <div
-      ref={sceneRef}
-      className={`gallery-scene ${isActive ? "active" : ""}`}
-      style={{ visibility: isActive ? "visible" : "hidden" }}
-    >
-      {/* 照片区域 */}
-      <div className="scene-visual">
-        <div ref={photoRef} className="scene-photo-container">
-          {/* 装饰框架 */}
-          <svg ref={frameRef} className="photo-frame" viewBox="0 0 400 500">
-            <defs>
-              <linearGradient id={`frameGrad-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(255,116,183,0.6)" />
-                <stop offset="50%" stopColor="rgba(255,255,255,0.8)" />
-                <stop offset="100%" stopColor="rgba(255,168,213,0.6)" />
-              </linearGradient>
-            </defs>
-            {/* 角落装饰 */}
-            <path
-              d="M 20 60 L 20 20 L 60 20"
-              fill="none"
-              stroke={`url(#frameGrad-${index})`}
-              strokeWidth="2"
-              className="frame-corner"
-            />
-            <path
-              d="M 340 20 L 380 20 L 380 60"
-              fill="none"
-              stroke={`url(#frameGrad-${index})`}
-              strokeWidth="2"
-              className="frame-corner"
-            />
-            <path
-              d="M 380 440 L 380 480 L 340 480"
-              fill="none"
-              stroke={`url(#frameGrad-${index})`}
-              strokeWidth="2"
-              className="frame-corner"
-            />
-            <path
-              d="M 60 480 L 20 480 L 20 440"
-              fill="none"
-              stroke={`url(#frameGrad-${index})`}
-              strokeWidth="2"
-              className="frame-corner"
-            />
-            {/* 装饰线条 */}
-            <line x1="80" y1="20" x2="320" y2="20" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="5,5" />
-            <line x1="80" y1="480" x2="320" y2="480" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="5,5" />
-          </svg>
-
-          {/* SVG线条叠加 */}
-          <img ref={svgRef} src={scene.svg} alt="" className="scene-svg-overlay" />
-
-          {/* 照片 */}
-          <img src={scene.img} alt={scene.title} className="scene-photo" />
-
-          {/* 光晕效果 */}
-          <div className="photo-glow" />
+    <div ref={containerRef} className="gallery-ending-page">
+      <canvas ref={canvasRef} className="gallery-ending-canvas" />
+      <button className="gallery-ending-back-btn" onClick={() => window.location.href = "/"} title="返回">
+        <span>←</span>
+      </button>
+      <div className="gallery-ending-content">
+        <div ref={letterRef} className="gallery-ending-letter">
+          <h2 className="gallery-ending-title">给优优的信</h2>
+          <div className="gallery-ending-text">
+            <p>亲爱的优优，</p>
+            <p>写下这些字的时候，我的心情就像此刻窗外的夜空一样，既深邃又明亮。想说的话有很多，但真正落笔时，又觉得任何语言都显得苍白。</p>
+            <p>从第一次在屏幕上看到你，到现在的每一天，你都在我生命里留下了不可磨灭的印记。那些看似平凡的瞬间，在我这里都变成了珍贵的回忆。</p>
+            <p>你的笑容是我见过最美的风景，你的声音是我听过最动听的旋律。每一次和你聊天，我都能感受到那份难得的温暖和真实。</p>
+            <p>我知道自己还有很多不足，但我会努力变得更好。我想成为那个能让你安心的人，想成为那个能陪你走过每一个春夏秋冬的人。</p>
+            <p>未来的路还很长，但我希望每一步都能和你一起走。无论是阳光明媚的日子，还是风雨交加的时刻，我都想陪在你身边。</p>
+            <p>这不仅仅是一封信，更是我想对你说的所有话的集合。也许文字有限，但我的心意是无限的。</p>
+            <p>谢谢你出现在我的生命里，谢谢你带来的所有美好。</p>
+            <p>愿我们都能成为更好的自己，愿我们的故事能够继续写下去。</p>
+            <p className="gallery-ending-signature">—— 永远爱你的我</p>
+          </div>
         </div>
       </div>
-
-      {/* 文字区域 */}
-      <div className="scene-content">
-        {/* 标题 */}
-        <h2 ref={titleRef} className="scene-title">
-          <span className="title-text">{scene.title}</span>
-          <span className="title-line" />
-        </h2>
-
-        {/* 诗句 */}
-        <div ref={poemRef} className="scene-poem">
-          {scene.poem.map((line, i) => (
-            <div key={i} className="poem-line">
-              <span className="poem-marker">—</span>
-              <span className="poem-text">{line}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* 故事 */}
-        <p ref={storyRef} className="scene-story">
-          {scene.story}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// 装饰性SVG元素
-function DecoElements({ currentIndex }: { currentIndex: number }) {
-  const decoRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!decoRef.current) return;
-
-    // 根据场景切换装饰元素的动画
-    gsap.to(".deco-circle", {
-      rotation: currentIndex * 45,
-      duration: 1.5,
-      ease: "power2.out",
-    });
-
-    gsap.to(".deco-line-h", {
-      scaleX: 0.5 + (currentIndex / 8) * 0.5,
-      duration: 1,
-      ease: "power2.out",
-    });
-  }, [currentIndex]);
-
-  return (
-    <div ref={decoRef} className="deco-elements">
-      {/* 左上角装饰 */}
-      <svg className="deco-corner deco-top-left" viewBox="0 0 200 200">
-        <circle
-          className="deco-circle"
-          cx="100"
-          cy="100"
-          r="80"
-          fill="none"
-          stroke="rgba(255,116,183,0.15)"
-          strokeWidth="1"
-          strokeDasharray="10,5"
-        />
-        <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-        <line className="deco-line-h" x1="20" y1="100" x2="180" y2="100" stroke="rgba(255,116,183,0.2)" strokeWidth="1" />
-        <line x1="100" y1="20" x2="100" y2="180" stroke="rgba(255,116,183,0.2)" strokeWidth="1" />
-      </svg>
-
-      {/* 右下角装饰 */}
-      <svg className="deco-corner deco-bottom-right" viewBox="0 0 200 200">
-        <path
-          d="M 20 180 Q 100 100 180 20"
-          fill="none"
-          stroke="rgba(255,168,213,0.2)"
-          strokeWidth="1"
-        />
-        <circle cx="180" cy="20" r="5" fill="rgba(255,116,183,0.3)" />
-        <circle cx="20" cy="180" r="5" fill="rgba(255,168,213,0.3)" />
-      </svg>
-
-      {/* 浮动装饰点 */}
-      <div className="floating-dots">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="floating-dot"
-            style={{
-              left: `${10 + i * 15}%`,
-              top: `${20 + (i % 3) * 30}%`,
-              animationDelay: `${i * 0.5}s`,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// 进度指示器
-function ProgressIndicator({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="progress-indicator">
-      <div className="progress-numbers">
-        <span className="progress-current">{String(current + 1).padStart(2, "0")}</span>
-        <span className="progress-divider">/</span>
-        <span className="progress-total">{String(total).padStart(2, "0")}</span>
-      </div>
-      <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ height: `${((current + 1) / total) * 100}%` }}
-        />
-      </div>
-      <div className="progress-dots">
-        {[...Array(total)].map((_, i) => (
-          <div
-            key={i}
-            className={`progress-dot ${i === current ? "active" : ""} ${i < current ? "passed" : ""}`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// 导航提示
-function NavigationHint() {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div className="nav-hint">
-      <div className="hint-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 5v14M5 12l7 7 7-7" />
-        </svg>
-      </div>
-      <span className="hint-text">滑动或滚动探索</span>
     </div>
   );
 }

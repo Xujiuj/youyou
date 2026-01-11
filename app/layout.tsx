@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Cormorant_Garamond, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
-const serif = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const serif = Cormorant_Garamond({ 
+  subsets: ["latin"], 
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-serif" 
+});
+const script = Great_Vibes({ 
+  subsets: ["latin"], 
+  weight: ["400"],
+  variable: "--font-script" 
+});
 
 export const metadata: Metadata = {
-  title: "只属于你",
+  title: "世界上最好的优优",
   description: "romance",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
-      <body className={`${serif.variable} ${sans.variable}`}>{children}</body>
+      <body className={`${serif.variable} ${script.variable}`}>{children}</body>
     </html>
   );
 }
