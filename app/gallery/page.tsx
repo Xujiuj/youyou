@@ -25,8 +25,12 @@ export default function GalleryPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [showEnding, setShowEnding] = useState(false);
+  const [loveReady, setLoveReady] = useState(false);
   const currentIndexRef = useRef(0);
   const isTransitioningRef = useRef(false);
+  const loveWrapperRef = useRef<HTMLDivElement | null>(null);
+  const loveBtnRef = useRef<HTMLButtonElement | null>(null);
+  const loveAnimPlayedRef = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageReady(true), 100);
@@ -40,6 +44,228 @@ export default function GalleryPage() {
   useEffect(() => {
     isTransitioningRef.current = isTransitioning;
   }, [isTransitioning]);
+
+  useEffect(() => {
+    if (currentIndex !== SCENES.length - 1) {
+      setLoveReady(false);
+      loveAnimPlayedRef.current = false;
+      if (loveWrapperRef.current) {
+        gsap.set(loveWrapperRef.current, { 
+          visibility: "hidden", 
+          opacity: 0 
+        });
+      }
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (!pageReady) return;
+    if (!loveReady) return;
+    if (showEnding) return;
+    if (currentIndex !== SCENES.length - 1) return;
+    if (loveAnimPlayedRef.current) return;
+
+    const wrapper = loveWrapperRef.current;
+    const btn = loveBtnRef.current;
+    const tip = wrapper?.querySelector(".gallery-love-letter-tip") as HTMLElement;
+    if (!wrapper || !btn) return;
+
+    loveAnimPlayedRef.current = true;
+
+    const trailCanvas = document.createElement("canvas");
+    trailCanvas.className = "gallery-love-trail-canvas";
+    trailCanvas.style.position = "fixed";
+    trailCanvas.style.top = "0";
+    trailCanvas.style.left = "0";
+    trailCanvas.style.width = "100%";
+    trailCanvas.style.height = "100%";
+    trailCanvas.style.pointerEvents = "none";
+    trailCanvas.style.zIndex = "59";
+    document.body.appendChild(trailCanvas);
+
+    const ctx = trailCanvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      trailCanvas.width = window.innerWidth;
+      trailCanvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const startX = window.innerWidth * 1.5;
+    const startY = -window.innerHeight * 0.3;
+    const endX = window.innerWidth * 0.5;
+    const endY = window.innerHeight * 0.5;
+
+    gsap.set(wrapper, { 
+      left: "150%",
+      top: "-30%",
+      xPercent: -50,
+      yPercent: -50,
+      scale: 0.3, 
+      opacity: 0, 
+      visibility: "visible",
+      rotate: -25,
+    });
+    gsap.set(btn, { pointerEvents: "none", filter: "blur(8px)", scale: 0.5, opacity: 1 });
+    gsap.set(tip, { opacity: 0, y: 20 });
+
+    const particles: Array<{ x: number; y: number; life: number; size: number; vx: number; vy: number }> = [];
+    let animId: number;
+    let lastX = startX;
+    let lastY = startY;
+
+    const renderParticles = () => {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life -= 0.025;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        const alpha = p.life * 0.9;
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 5);
+        gradient.addColorStop(0, `rgba(255, 182, 193, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(255, 116, 183, ${alpha * 0.7})`);
+        gradient.addColorStop(1, "transparent");
+        ctx.fillStyle = gradient;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = `rgba(255, 182, 193, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    };
+
+    const updateTrail = (x: number, y: number) => {
+      const dx = x - lastX;
+      const dy = y - lastY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist > 2) {
+        const steps = Math.floor(dist / 3);
+        for (let i = 0; i < steps; i++) {
+          const t = i / steps;
+          const px = lastX + dx * t;
+          const py = lastY + dy * t;
+          particles.push({ 
+            x: px, 
+            y: py, 
+            life: 1, 
+            size: 2 + Math.random() * 3,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2
+          });
+        }
+        lastX = x;
+        lastY = y;
+      }
+      
+      if (particles.length > 50) particles.shift();
+      renderParticles();
+    };
+
+    const animateTrail = () => {
+      renderParticles();
+      animId = requestAnimationFrame(animateTrail);
+    };
+    animateTrail();
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setTimeout(() => {
+          if (trailCanvas.parentNode) trailCanvas.parentNode.removeChild(trailCanvas);
+          window.removeEventListener("resize", resize);
+          if (animId) cancelAnimationFrame(animId);
+        }, 500);
+        
+        gsap.set(wrapper, {
+          left: "50%",
+          top: "50%",
+          xPercent: -50,
+          yPercent: -50,
+          opacity: 1,
+          visibility: "visible",
+        });
+        
+        gsap.set(btn, { pointerEvents: "auto" });
+        
+        setTimeout(() => {
+          gsap.to(wrapper, {
+            top: "calc(50% - 15px)",
+            duration: 1.6,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          });
+        }, 200);
+      },
+    });
+
+    tl.to(wrapper, {
+      left: "50%",
+      top: "50%",
+      xPercent: -50,
+      yPercent: -50,
+      scale: 1,
+      rotate: 0,
+      opacity: 1,
+      visibility: "visible",
+      duration: 2.8,
+      ease: "power2.out",
+      onUpdate: function() {
+        const progress = this.progress();
+        const currentX = startX + (endX - startX) * progress;
+        const currentY = startY + (endY - startY) * progress;
+        updateTrail(currentX, currentY);
+      },
+    });
+
+    tl.to(btn, {
+      filter: "blur(0px)",
+      scale: 1,
+      duration: 1.5,
+      ease: "power2.out",
+    }, "-=1.5");
+
+    tl.to(btn, {
+      boxShadow: "0 10px 40px rgba(255, 116, 183, 0.3), 0 0 30px rgba(255, 182, 193, 0.25)",
+      duration: 1.2,
+      ease: "power2.out",
+    }, "-=1.2");
+
+    tl.to(btn, {
+      rotate: 360,
+      duration: 2.8,
+      ease: "power2.out",
+    }, 0);
+
+    tl.to(tip, {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: "power2.out",
+    }, "-=0.8");
+
+    return () => {
+      tl.kill();
+      if (trailCanvas.parentNode) trailCanvas.parentNode.removeChild(trailCanvas);
+      window.removeEventListener("resize", resize);
+      if (animId) cancelAnimationFrame(animId);
+    };
+  }, [pageReady, currentIndex, showEnding, loveReady]);
 
   const go = useCallback((dir: 1 | -1) => {
     if (!pageReady || isTransitioningRef.current || showEnding) return;
@@ -95,7 +321,15 @@ export default function GalleryPage() {
       </div>
 
       {!showEnding && renderIndexes.map((i) => (
-        <Scene key={i} scene={SCENES[i]} index={i} currentIndex={currentIndex} onComplete={handleComplete} pageReady={pageReady} onLastComplete={i === SCENES.length - 1 && currentIndex === i ? () => setShowEnding(true) : undefined} />
+        <Scene
+          key={i}
+          scene={SCENES[i]}
+          index={i}
+          currentIndex={currentIndex}
+          onComplete={handleComplete}
+          pageReady={pageReady}
+          onLastComplete={i === SCENES.length - 1 ? () => setLoveReady(true) : undefined}
+        />
       ))}
 
       <nav className="gallery-nav">
@@ -107,23 +341,27 @@ export default function GalleryPage() {
         <button className="gallery-back-btn" onClick={() => window.location.href = "/"} title="返回">
           <span>←</span>
         </button>
-        <div className="gallery-footer-num"><span className="current">{String(currentIndex + 1).padStart(2, "0")}</span><span className="sep">/</span><span className="total">{String(SCENES.length).padStart(2, "0")}</span></div>
-        <div className="gallery-footer-title">{scene.titleEn}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="gallery-footer-center">
+          <div className="gallery-footer-num"><span className="current">{String(currentIndex + 1).padStart(2, "0")}</span><span className="sep">/</span><span className="total">{String(SCENES.length).padStart(2, "0")}</span></div>
+          <div className="gallery-footer-title">{scene.titleEn}</div>
           {currentIndex < SCENES.length - 1 && <div className="gallery-footer-hint">↓ scroll</div>}
-          <button className="gallery-forward-btn" onClick={() => setShowEnding(true)} title="前往书信">
-            <span>→</span>
-          </button>
         </div>
       </footer>
 
-      {/* 最后一张图时显示爱心信件按钮 */}
       {currentIndex === SCENES.length - 1 && !showEnding && (
-        <button className="gallery-love-letter-btn" onClick={() => setShowEnding(true)} title="打开书信">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-        </button>
+        <div ref={loveWrapperRef} className="gallery-love-letter-wrapper">
+          <button
+            ref={loveBtnRef}
+            className="gallery-love-letter-btn"
+            onClick={() => setShowEnding(true)}
+            title="打开书信"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </button>
+          <div className="gallery-love-letter-tip">给你的信</div>
+        </div>
       )}
 
       {showEnding && <EndingPage lastScene={SCENES[SCENES.length - 1]} />}
@@ -528,7 +766,13 @@ function Scene({ scene, index, currentIndex, onComplete, pageReady, onLastComple
         ease: "power2.out" 
       }, 1.2);
     }
-  }, [index, currentIndex, onLastComplete]);
+
+    if (onLastComplete) {
+      textTl.eventCallback("onComplete", () => {
+        onLastComplete();
+      });
+    }
+  }, [onLastComplete]);
 
   useEffect(() => {
     if (!sceneRef.current || !pageReady) return;
@@ -625,6 +869,240 @@ function Scene({ scene, index, currentIndex, onComplete, pageReady, onLastComple
         <PortraitSketch svgSrc={scene.svg} accent={scene.accent} isActive={isActive} onComplete={handleSketchComplete} />
       </div>
     </div>
+  );
+}
+
+// 浪漫装饰元素组件
+function RomanticDecorations() {
+  const leftDecorRef = useRef<HTMLDivElement>(null);
+  const rightDecorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const leftDecor = leftDecorRef.current;
+    const rightDecor = rightDecorRef.current;
+    if (!leftDecor || !rightDecor) return;
+
+    // 左侧飘落的花瓣/爱心
+    const createFallingElement = (side: 'left' | 'right') => {
+      const container = side === 'left' ? leftDecor : rightDecor;
+      const element = document.createElement('div');
+      element.className = `romantic-${side}-element`;
+      
+      const types = ['heart', 'petal', 'star'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      element.setAttribute('data-type', type);
+      
+      // 计算信件中心位置和宽度（假设信件最大宽度650px）
+      const letterCenterX = window.innerWidth / 2;
+      const letterWidth = 650;
+      const letterLeft = letterCenterX - letterWidth / 2;
+      const letterRight = letterCenterX + letterWidth / 2;
+      
+      let startX: number;
+      let endX: number;
+      
+      if (side === 'left') {
+        // 左侧：从屏幕左边缘到信件左边缘附近
+        const leftArea = letterLeft - 100;
+        startX = Math.random() * Math.max(leftArea, 400);
+        endX = startX + (Math.random() - 0.5) * 150;
+      } else {
+        // 右侧：从信件右边缘附近到屏幕右边缘
+        const rightAreaStart = letterRight + 50;
+        const rightAreaWidth = window.innerWidth - rightAreaStart;
+        startX = rightAreaStart + Math.random() * Math.max(rightAreaWidth, 400);
+        endX = startX + (Math.random() - 0.5) * 150;
+      }
+      
+      gsap.set(element, {
+        x: startX,
+        y: -50,
+        rotation: Math.random() * 360,
+        scale: 0.8 + Math.random() * 0.7,
+        opacity: 0.7 + Math.random() * 0.3
+      });
+      
+      container.appendChild(element);
+      
+      const duration = 8 + Math.random() * 6;
+      const delay = Math.random() * 2;
+      
+      gsap.to(element, {
+        x: endX,
+        y: window.innerHeight + 100,
+        rotation: Math.random() * 720,
+        duration: duration,
+        delay: delay,
+        ease: "none",
+        onComplete: () => element.remove()
+      });
+    };
+
+    // 右侧闪烁的星星
+    const createTwinklingStar = () => {
+      const star = document.createElement('div');
+      star.className = 'romantic-right-star';
+      
+      // 计算信件右侧区域
+      const letterCenterX = window.innerWidth / 2;
+      const letterWidth = 650;
+      const letterRight = letterCenterX + letterWidth / 2;
+      const rightAreaStart = letterRight + 50;
+      const rightAreaWidth = window.innerWidth - rightAreaStart;
+      
+      const x = rightAreaStart + Math.random() * Math.max(rightAreaWidth, 300);
+      const y = Math.random() * window.innerHeight;
+      
+      gsap.set(star, {
+        x: x,
+        y: y,
+        scale: 0,
+        opacity: 0
+      });
+      
+      rightDecor.appendChild(star);
+      
+      const tl = gsap.timeline({ repeat: -1, yoyo: true });
+      tl.to(star, {
+        scale: 0.8 + Math.random() * 0.4,
+        opacity: 0.6 + Math.random() * 0.3,
+        duration: 1.5 + Math.random(),
+        ease: "sine.inOut"
+      });
+      
+      setTimeout(() => {
+        gsap.to(star, {
+          opacity: 0,
+          scale: 0,
+          duration: 1,
+          onComplete: () => star.remove()
+        });
+      }, 8000 + Math.random() * 4000);
+    };
+
+    // 左侧浮动光点
+    const createFloatingLight = () => {
+      const light = document.createElement('div');
+      light.className = 'romantic-floating-light';
+      
+      // 计算信件左侧区域
+      const letterCenterX = window.innerWidth / 2;
+      const letterWidth = 650;
+      const letterLeft = letterCenterX - letterWidth / 2;
+      const leftArea = letterLeft - 100;
+      
+      const x = Math.random() * Math.max(leftArea, 400);
+      const startY = Math.random() * window.innerHeight;
+      const endY = startY - 100 - Math.random() * 200;
+      
+      gsap.set(light, {
+        x: x,
+        y: startY,
+        scale: 0,
+        opacity: 0
+      });
+      
+      leftDecor.appendChild(light);
+      
+      gsap.to(light, {
+        y: endY,
+        scale: 0.5 + Math.random() * 0.5,
+        opacity: 0.4 + Math.random() * 0.3,
+        duration: 4 + Math.random() * 3,
+        ease: "sine.inOut",
+        onComplete: () => {
+          gsap.to(light, {
+            opacity: 0,
+            scale: 0,
+            duration: 1,
+            onComplete: () => light.remove()
+          });
+        }
+      });
+    };
+
+    // 右侧爱心粒子
+    const createHeartParticle = () => {
+      const heart = document.createElement('div');
+      heart.className = 'romantic-heart-particle';
+      heart.textContent = '♥';
+      
+      // 计算信件右侧区域
+      const letterCenterX = window.innerWidth / 2;
+      const letterWidth = 650;
+      const letterRight = letterCenterX + letterWidth / 2;
+      const rightAreaStart = letterRight + 50;
+      const rightAreaWidth = window.innerWidth - rightAreaStart;
+      
+      const x = rightAreaStart + Math.random() * Math.max(rightAreaWidth, 300);
+      const startY = window.innerHeight + 20;
+      const endY = -50;
+      
+      gsap.set(heart, {
+        x: x,
+        y: startY,
+        rotation: Math.random() * 360,
+        scale: 0.8 + Math.random() * 0.6,
+        opacity: 0.8 + Math.random() * 0.2
+      });
+      
+      rightDecor.appendChild(heart);
+      
+      gsap.to(heart, {
+        y: endY,
+        x: x + (Math.random() - 0.5) * 100,
+        rotation: Math.random() * 720,
+        duration: 8 + Math.random() * 4,
+        ease: "none",
+        onComplete: () => heart.remove()
+      });
+    };
+
+    // 持续创建元素
+    const leftInterval = setInterval(() => {
+      if (leftDecor.querySelectorAll('.romantic-left-element').length < 15) {
+        createFallingElement('left');
+      }
+    }, 800);
+
+    const rightStarInterval = setInterval(() => {
+      if (rightDecor.querySelectorAll('.romantic-right-star').length < 12) {
+        createTwinklingStar();
+      }
+    }, 1500);
+
+    const rightFallingInterval = setInterval(() => {
+      if (rightDecor.querySelectorAll('.romantic-right-element').length < 15) {
+        createFallingElement('right');
+      }
+    }, 800);
+
+    const leftLightInterval = setInterval(() => {
+      if (leftDecor.querySelectorAll('.romantic-floating-light').length < 5) {
+        createFloatingLight();
+      }
+    }, 2500);
+
+    const rightHeartInterval = setInterval(() => {
+      if (rightDecor.querySelectorAll('.romantic-heart-particle').length < 10) {
+        createHeartParticle();
+      }
+    }, 1500);
+
+    return () => {
+      clearInterval(leftInterval);
+      clearInterval(rightStarInterval);
+      clearInterval(rightFallingInterval);
+      clearInterval(leftLightInterval);
+      clearInterval(rightHeartInterval);
+    };
+  }, []);
+
+  return (
+    <>
+      <div ref={leftDecorRef} className="romantic-decorations romantic-decorations-left" />
+      <div ref={rightDecorRef} className="romantic-decorations romantic-decorations-right" />
+    </>
   );
 }
 
@@ -934,6 +1412,7 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       <button className="gallery-ending-back-btn" onClick={() => window.location.href = "/"} title="返回">
         <span>←</span>
       </button>
+      <RomanticDecorations />
       <div className="gallery-ending-content">
         <div ref={letterRef} className="gallery-ending-letter">
           <h2 className="gallery-ending-title">致优优</h2>

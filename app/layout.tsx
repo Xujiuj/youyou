@@ -16,6 +16,9 @@ const script = Great_Vibes({
 export const metadata: Metadata = {
   title: "世界上最好的优优",
   description: "romance",
+  icons: {
+    icon: "/youyou.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

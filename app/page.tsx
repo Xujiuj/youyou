@@ -588,7 +588,7 @@ function Gate({ onUnlock, onParticleComplete }: { onUnlock: () => void; onPartic
                       ref={inputRef} 
                       type="password" 
                       className="gate-input"
-                      placeholder="一个特殊的日子"
+                      placeholder="初见"
                       onKeyDown={e => e.key === "Enter" && check()}
                   />
                   <button className="gate-btn" onClick={check}>
