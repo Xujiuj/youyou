@@ -247,15 +247,6 @@
   position: relative;
 }
 
-.gallery-svg-area::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0.7) 100%);
-  z-index: 1;
-  pointer-events: none;
-}
-
 .gallery-sketch-container {
   position: relative;
   display: flex;

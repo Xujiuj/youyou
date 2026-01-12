@@ -117,7 +117,7 @@ export default function GalleryPage() {
   );
 }
 
-// 流星特效Canvas - 简化版，与SVG绘制时减少冲突
+// 流星特效Canvas - 完全独立运行，不受SVG绘制影响
 function MeteorCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -159,24 +159,18 @@ function MeteorCanvas() {
     };
     
     let animId: number;
-    let lastTime = 0;
-    const targetFPS = 30;
-    const frameInterval = 1000 / targetFPS;
     
-    const animate = (currentTime: number = 0) => {
-      if (currentTime - lastTime < frameInterval) {
-        animId = requestAnimationFrame(animate);
-        return;
-      }
-      lastTime = currentTime;
-      
+    // 使用独立的动画循环，不依赖帧率限制
+    const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (Math.random() < 0.025 && meteors.length < 3) {
+      // 流星生成
+      if (Math.random() < 0.015 && meteors.length < 4) {
         createMeteor();
       }
       
-      meteors.forEach((meteor, index) => {
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const meteor = meteors[i];
         const dx = Math.cos(meteor.angle) * meteor.speed;
         const dy = Math.sin(meteor.angle) * meteor.speed;
         
@@ -206,9 +200,9 @@ function MeteorCanvas() {
         ctx.restore();
         
         if (meteor.y > canvas.height + 100 || meteor.x < -100 || meteor.x > canvas.width + 100) {
-          meteors.splice(index, 1);
+          meteors.splice(i, 1);
         }
-      });
+      }
       
       animId = requestAnimationFrame(animate);
     };
@@ -223,11 +217,13 @@ function MeteorCanvas() {
   return <canvas ref={canvasRef} className="gallery-particles" />;
 }
 
-// 直接加载 SVG 并做路径绘制动画
+// 纯线条绘制的 SVG 组件 - 只显示描边，不显示填充
 const PortraitSketch = memo(function PortraitSketch({ svgSrc, accent, isActive, onComplete }: { svgSrc: string; accent: string; isActive: boolean; onComplete?: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const animRef = useRef<gsap.core.Timeline | null>(null);
+  const loadedRef = useRef(false);
+  const svgContentRef = useRef<string | null>(null); // 缓存SVG内容
 
   useEffect(() => {
     const container = containerRef.current;
@@ -240,16 +236,43 @@ const PortraitSketch = memo(function PortraitSketch({ svgSrc, accent, isActive, 
     }
 
     if (isActive) {
-      // 加载 SVG
+      // 如果已经加载过，直接恢复显示
+      if (loadedRef.current && svgContentRef.current) {
+        // 重新插入缓存的SVG内容
+        if (!container.querySelector("svg")) {
+          container.innerHTML = svgContentRef.current;
+          const svg = container.querySelector("svg");
+          if (svg) {
+            svgRef.current = svg;
+            // 确保所有路径都是最终状态
+            const paths = svg.querySelectorAll("path, line, polyline, polygon, circle, ellipse, rect");
+            paths.forEach((path) => {
+              const el = path as SVGGeometryElement;
+              el.style.strokeDashoffset = "0";
+              el.style.opacity = "1";
+            });
+          }
+        }
+        gsap.to(container, { opacity: 1, duration: 0.5 });
+        if (onComplete) setTimeout(onComplete, 500);
+        return;
+      }
+      
+      // 首次加载SVG
       fetch(svgSrc)
         .then(res => res.text())
         .then(svgText => {
           if (!containerRef.current) return;
           
-          // 插入 SVG
+          // 缓存原始SVG内容
+          svgContentRef.current = svgText;
+          
           container.innerHTML = svgText;
           const svg = container.querySelector("svg");
-          if (!svg) return;
+          if (!svg) {
+            if (onComplete) setTimeout(onComplete, 500);
+            return;
+          }
           
           svgRef.current = svg;
           svg.classList.add("gallery-sketch-svg");
@@ -276,172 +299,100 @@ const PortraitSketch = memo(function PortraitSketch({ svgSrc, accent, isActive, 
           const paths = svg.querySelectorAll("path, line, polyline, polygon, circle, ellipse, rect");
           
           if (paths.length === 0) {
-            // 如果没有路径，直接显示
+            loadedRef.current = true;
             gsap.to(container, { opacity: 1, duration: 0.5 });
             if (onComplete) setTimeout(onComplete, 500);
             return;
           }
 
-          // 设置路径样式并准备动画
+          // 只保留有描边的路径，移除所有填充
+          const validPaths: SVGGeometryElement[] = [];
           paths.forEach((path) => {
             const el = path as SVGGeometryElement;
+            const computedStyle = window.getComputedStyle(el);
+            const stroke = computedStyle.stroke;
+            const strokeWidth = parseFloat(computedStyle.strokeWidth) || 0;
             
-            const fill = el.getAttribute("fill") || window.getComputedStyle(el).fill;
-            const fillColor = fill ? fill.toLowerCase() : "";
+            // 移除所有填充，只保留描边
+            el.setAttribute("fill", "none");
+            el.style.fill = "none";
             
-            let shouldHide = false;
-            let opacity = 1;
-            
-            if (fillColor) {
-              if (fillColor.startsWith("#ff") || fillColor.startsWith("rgb(255")) {
-                try {
-                  const box = el.getBBox();
-                  const centerY = box.y + box.height / 2;
-                  const area = box.width * box.height;
-                  
-                  if (centerY > 200 && centerY < 600 && area < 5000) {
-                    shouldHide = true;
-                  } else if (centerY > 200 && centerY < 600) {
-                    opacity = 0.15;
-                  }
-                } catch {
-                  if (fillColor.startsWith("#ff")) {
-                    opacity = 0.2;
-                  }
-                }
-              }
+            // 如果没有描边，添加一个基于accent颜色的描边
+            if (!stroke || stroke === "none" || strokeWidth === 0) {
+              el.setAttribute("stroke", accent);
+              el.setAttribute("stroke-width", "1");
             }
             
-            if (shouldHide) {
-              el.style.display = "none";
-              return;
-            }
+            // 设置描边颜色为accent色
+            el.style.stroke = accent;
+            el.style.filter = `drop-shadow(0 0 6px ${accent})`;
             
-            if (opacity < 1) {
-              el.style.opacity = String(opacity);
-            }
-            
-            el.style.filter = `drop-shadow(0 0 8px ${accent})`;
-            
-            const stroke = window.getComputedStyle(el).stroke;
-            if (stroke && stroke !== "none") {
-              try {
-                const length = el.getTotalLength?.() || 1000;
-                el.style.strokeDasharray = `${length}`;
-                el.style.strokeDashoffset = `${length}`;
-              } catch {
-              }
+            // 设置描边动画
+            try {
+              const length = el.getTotalLength?.() || 1000;
+              el.style.strokeDasharray = `${length}`;
+              el.style.strokeDashoffset = `${length}`;
+            } catch {
+              // 某些元素可能不支持 getTotalLength
             }
             
             gsap.set(el, { opacity: 0 });
+            validPaths.push(el);
           });
 
           gsap.set(container, { opacity: 1 });
 
-          const pathArray = Array.from(paths).filter((path) => {
-            const el = path as SVGGeometryElement;
-            return el.style.display !== "none";
-          });
-          
-          pathArray.sort((a, b) => {
-            const aEl = a as SVGGeometryElement;
-            const bEl = b as SVGGeometryElement;
-            
+          // 按Y坐标排序，从上到下绘制
+          validPaths.sort((a, b) => {
             try {
-              const aBox = aEl.getBBox();
-              const bBox = bEl.getBBox();
-              
-              const aCenterY = aBox.y + aBox.height / 2;
-              const bCenterY = bBox.y + bBox.height / 2;
-              
-              if (Math.abs(aCenterY - bCenterY) < 20) {
-                const aArea = aBox.width * aBox.height;
-                const bArea = bBox.width * bBox.height;
-                return bArea - aArea;
-              }
-              
-              return aCenterY - bCenterY;
+              const aBox = a.getBBox();
+              const bBox = b.getBBox();
+              return (aBox.y + aBox.height / 2) - (bBox.y + bBox.height / 2);
             } catch {
               return 0;
             }
           });
           
-          const batchSize = Math.max(1, Math.floor(pathArray.length / 3));
+          const batchSize = Math.max(1, Math.floor(validPaths.length / 8));
           
           const tl = gsap.timeline({
             onComplete: () => {
+              loadedRef.current = true;
+              // 更新缓存的SVG内容为最终状态
+              if (svgRef.current) {
+                svgContentRef.current = container.innerHTML;
+              }
               if (onComplete) setTimeout(onComplete, 100);
             }
           });
           animRef.current = tl;
           
-          pathArray.forEach((path, i) => {
-            const el = path as SVGGeometryElement;
+          // 线条绘制动画
+          validPaths.forEach((el, i) => {
             const batchIndex = Math.floor(i / batchSize);
-            const batchDelay = batchIndex * 0.04;
-            const itemDelay = (i % batchSize) * 0.006;
-            const delay = batchDelay + itemDelay;
+            const delay = batchIndex * 0.08 + (i % batchSize) * 0.01;
             
-            const stroke = window.getComputedStyle(el).stroke;
-            const hasStroke = stroke && stroke !== "none";
+            // 先显示元素，然后绘制线条
+            tl.to(el, { 
+              opacity: 1,
+              duration: 0.3,
+              ease: "power2.out"
+            }, delay);
             
-            gsap.set(el, { scale: 0.98, opacity: 0 });
-            
-            try {
-              const box = el.getBBox();
-              const centerY = box.y + box.height / 2;
-              const isFaceArea = centerY > 200 && centerY < 600;
-              
-              if (hasStroke) {
-                try {
-                  const length = el.getTotalLength?.() || 1000;
-                  el.style.strokeDasharray = `${length}`;
-                  el.style.strokeDashoffset = `${length}`;
-                  tl.to(el, { 
-                    strokeDashoffset: 0, 
-                    duration: isFaceArea ? 0.8 : 1.0 + (i % 3) * 0.15, 
-                    ease: isFaceArea ? "sine.inOut" : "power2.out"
-                  }, delay);
-                } catch {}
-              }
-              
-              tl.to(el, { 
-                opacity: 1,
-                scale: 1,
-                rotation: isFaceArea ? 0 : 0,
-                duration: hasStroke ? (isFaceArea ? 0.7 : 0.9) : (isFaceArea ? 0.6 : 0.8), 
-                ease: isFaceArea ? "sine.out" : "power2.out"
-              }, delay + (hasStroke ? 0.05 : 0));
-            } catch {
-              if (hasStroke) {
-                try {
-                  const length = el.getTotalLength?.() || 1000;
-                  el.style.strokeDasharray = `${length}`;
-                  el.style.strokeDashoffset = `${length}`;
-                  tl.to(el, { 
-                    strokeDashoffset: 0, 
-                    duration: 1.2, 
-                    ease: "sine.inOut"
-                  }, delay);
-                } catch {}
-              }
-              
-              tl.to(el, { 
-                opacity: 1,
-                scale: 1,
-                rotation: 0,
-                duration: hasStroke ? 1 : 0.9, 
-                ease: "sine.out"
-              }, delay + (hasStroke ? 0.1 : 0));
-            }
+            tl.to(el, { 
+              strokeDashoffset: 0, 
+              duration: 1.2 + (i % 3) * 0.2, 
+              ease: "power2.inOut"
+            }, delay);
           });
 
+          // 整体发光效果
           gsap.set(svg, { scale: 0.98 });
           tl.to(svg, {
-            filter: `drop-shadow(0 0 20px ${accent})`,
+            filter: `drop-shadow(0 0 15px ${accent})`,
             scale: 1,
-            duration: 1,
-            ease: "elastic.out(1, 0.4)"
+            duration: 0.8,
+            ease: "power2.out"
           }, "-=0.5");
 
         })
@@ -451,7 +402,7 @@ const PortraitSketch = memo(function PortraitSketch({ svgSrc, accent, isActive, 
         });
 
     } else {
-      // 淡出
+      // 非激活状态：淡出
       gsap.to(container, { opacity: 0, duration: 0.2 });
     }
 
@@ -492,11 +443,7 @@ function Scene({ scene, index, currentIndex, onComplete, pageReady, onLastComple
     if (!contentAreaRef.current || textStartedRef.current) return;
     textStartedRef.current = true;
     
-    if (index === currentIndex && currentIndex === SCENES.length - 1 && onLastComplete) {
-      setTimeout(() => {
-        onLastComplete();
-      }, 4000);
-    }
+    // 移除自动触发书信的逻辑，改为用户手动滚动触发
 
     const titleEn = contentAreaRef.current.querySelector(".gallery-title-en");
     const titleCn = contentAreaRef.current.querySelector(".gallery-title-cn");
@@ -758,22 +705,26 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       const targetY = canvas.height * 0.2 + Math.random() * canvas.height * 0.25;
       const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2"];
       
-      fireworks.push({
-        x,
-        y: canvas.height + 10,
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: -16 - Math.random() * 6,
-        life: 1,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        trail: [],
-        targetY,
-        exploded: false
-      });
+      // 限制最大烟花数量以提高性能
+      if (fireworks.length < 8) {
+        fireworks.push({
+          x,
+          y: canvas.height + 10,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -16 - Math.random() * 6,
+          life: 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          trail: [],
+          targetY,
+          exploded: false
+        });
+      }
     };
     
     const explodeFirework = (firework: typeof fireworks[0]) => {
       const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2", "#ffc0cb"];
-      const particleCount = 120 + Math.floor(Math.random() * 60);
+      // 减少粒子数量以提高性能
+      const particleCount = 60 + Math.floor(Math.random() * 30);
       
       for (let i = 0; i < particleCount; i++) {
         const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.4;
@@ -793,12 +744,13 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       }
     };
     
-    // SVG线条闪现
+    // SVG线条闪现 - 限制数量以提高性能
     const svgPaths: Array<{ path: string; x: number; y: number; opacity: number; life: number }> = [];
     const svgFiles = SCENES.map(s => s.svg);
     
     const createSVGLine = async () => {
-      if (svgPaths.length > 3) return;
+      // 限制同时显示的数量
+      if (svgPaths.length > 2) return;
       
       const svgFile = svgFiles[Math.floor(Math.random() * svgFiles.length)];
       try {
@@ -818,7 +770,7 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
               opacity: 1,
-              life: 2000 + Math.random() * 1000
+              life: 1500 + Math.random() * 800 // 缩短生命周期
             });
           }
         }
@@ -840,7 +792,8 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       
       // 烟花
       fireworkTimer += delta;
-      if (fireworkTimer > 1200 + Math.random() * 1800) {
+      // 增加时间间隔以减少性能消耗
+      if (fireworkTimer > 2000 + Math.random() * 2000) {
         fireworkTimer = 0;
         createFirework();
       }
@@ -914,7 +867,8 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       
       // SVG线条
       svgTimer += delta;
-      if (svgTimer > 1500 + Math.random() * 1500) {
+      // 增加时间间隔以减少性能消耗
+      if (svgTimer > 3000 + Math.random() * 2000) {
         svgTimer = 0;
         createSVGLine();
       }
@@ -951,7 +905,7 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
     };
     
     animId = requestAnimationFrame(animate);
-    
+
     return () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animId);
@@ -966,7 +920,7 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       </button>
       <div className="gallery-ending-content">
         <div ref={letterRef} className="gallery-ending-letter">
-          <h2 className="gallery-ending-title">给优优的信</h2>
+          <h2 className="gallery-ending-title">致优优</h2>
           <div className="gallery-ending-text">
             <p>亲爱的优优，</p>
             <p>写下这些字的时候，我的心情就像此刻窗外的夜空一样，既深邃又明亮。想说的话有很多，但真正落笔时，又觉得任何语言都显得苍白。</p>

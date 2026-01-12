@@ -11,6 +11,21 @@ const BOUNDS_Y = 50;
 const BOUNDS_Z = 35;
 const HOVER_HEIGHT = 25;
 
+// 添加性能检测函数
+const getPerformanceFactor = (): number => {
+  // 在生产环境中，根据设备性能调整动画速度
+  if (typeof window !== 'undefined') {
+    // 简单的性能检测：如果设备内存较小，则降低性能要求
+    const deviceMemory = (navigator as any).deviceMemory || 8; // 默认8GB
+    if (deviceMemory < 4) {
+      return 0.8; // 低性能设备
+    }
+  }
+  return 1.0; // 正常性能
+};
+
+const performanceFactor = getPerformanceFactor();
+
 const getHeartShape = (scale = 1, centerX = 0, centerY = 0): THREE.Vector3[] => {
   const points: THREE.Vector3[] = [];
   
@@ -160,6 +175,7 @@ const loadSVGPath = async (svgPath: string, scale = 1): Promise<THREE.Vector3[]>
       img.src = url;
     });
   } catch (error) {
+    console.error('Error loading SVG:', error);
     return [];
   }
 };
@@ -168,7 +184,7 @@ const createTextPath = (text: string, scale = 1, font = "bold 200px Arial"): THR
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return [];
-  
+
   canvas.width = 1024;
   canvas.height = 256;
   ctx.fillStyle = "white";
@@ -176,11 +192,11 @@ const createTextPath = (text: string, scale = 1, font = "bold 200px Arial"): THR
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-  
+
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const points: THREE.Vector3[] = [];
   const step = 2;
-  
+
   for (let y = 0; y < canvas.height; y += step) {
     for (let x = 0; x < canvas.width; x += step) {
       const index = (y * canvas.width + x) * 4;
@@ -424,6 +440,17 @@ export default function GateDroneBackground() {
       return allArrived;
     };
 
+    // 悬停时的浮动偏移量，用于实现悬停效果
+    const hoverOffsets = new Float32Array(DRONE_COUNT);
+    const hoverPhases = new Float32Array(DRONE_COUNT);
+    for (let i = 0; i < DRONE_COUNT; i++) {
+      hoverOffsets[i] = (Math.random() - 0.5) * 2; // 随机浮动幅度
+      hoverPhases[i] = Math.random() * Math.PI * 2; // 随机相位
+    }
+
+    // 控制是否允许无人机移动（初始化阶段不移动）
+    let allowMovement = false;
+
     const animate = () => {
       if (!threeRef.current) return;
       
@@ -433,48 +460,63 @@ export default function GateDroneBackground() {
       const time = Date.now() * 0.001;
       (material.uniforms.time as THREE.IUniform).value = time;
       
-      for (let i = 0; i < DRONE_COUNT; i++) {
-        const i3 = i * 3;
+      // 只有在允许移动时才更新位置
+      if (allowMovement) {
+        // 检查是否处于悬停阶段（stage 0 或 5）
+        const isHovering = stageRef.current === 0 || stageRef.current === 5;
         
-        const dx = targets[i3] - posAttr[i3];
-        const dy = targets[i3 + 1] - posAttr[i3 + 1];
-        const dz = targets[i3 + 2] - posAttr[i3 + 2];
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        const maxSpeed = 0.3;
-        const acceleration = Math.min(0.008, distance * 0.0005);
-        
-        velocities[i3] += dx * acceleration;
-        velocities[i3 + 1] += dy * acceleration;
-        velocities[i3 + 2] += dz * acceleration;
-        
-        const speed = Math.sqrt(velocities[i3] * velocities[i3] + velocities[i3 + 1] * velocities[i3 + 1] + velocities[i3 + 2] * velocities[i3 + 2]);
-        if (speed > maxSpeed) {
-          const scale = maxSpeed / speed;
-          velocities[i3] *= scale;
-          velocities[i3 + 1] *= scale;
-          velocities[i3 + 2] *= scale;
+        for (let i = 0; i < DRONE_COUNT; i++) {
+          const i3 = i * 3;
+          
+          // 悬停时添加浮动效果
+          let targetY = targets[i3 + 1];
+          if (isHovering) {
+            const hoverWave = Math.sin(time * 1.5 + hoverPhases[i]) * 0.8;
+            targetY = HOVER_HEIGHT + hoverOffsets[i] + hoverWave;
+          }
+          
+          const dx = targets[i3] - posAttr[i3];
+          const dy = targetY - posAttr[i3 + 1];
+          const dz = targets[i3 + 2] - posAttr[i3 + 2];
+          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          
+          // 提高速度让无人机更快到位
+          const maxSpeed = 0.8;
+          const acceleration = Math.min(0.025, distance * 0.002);
+          
+          velocities[i3] += dx * acceleration;
+          velocities[i3 + 1] += dy * acceleration;
+          velocities[i3 + 2] += dz * acceleration;
+          
+          const speed = Math.sqrt(velocities[i3] * velocities[i3] + velocities[i3 + 1] * velocities[i3 + 1] + velocities[i3 + 2] * velocities[i3 + 2]);
+          if (speed > maxSpeed) {
+            const scale = maxSpeed / speed;
+            velocities[i3] *= scale;
+            velocities[i3 + 1] *= scale;
+            velocities[i3 + 2] *= scale;
+          }
+          
+          velocities[i3] *= 0.96;
+          velocities[i3 + 1] *= 0.96;
+          velocities[i3 + 2] *= 0.96;
+          
+          posAttr[i3] += velocities[i3];
+          posAttr[i3 + 1] += velocities[i3 + 1];
+          posAttr[i3 + 2] += velocities[i3 + 2];
+          
+          posAttr[i3] = clamp(posAttr[i3], -BOUNDS_X, BOUNDS_X);
+          posAttr[i3 + 1] = clamp(posAttr[i3 + 1], -BOUNDS_Y, BOUNDS_Y);
+          posAttr[i3 + 2] = clamp(posAttr[i3 + 2], -BOUNDS_Z, BOUNDS_Z);
+          
+          colorAttr[i3] += (targetColors[i3] - colorAttr[i3]) * 0.02;
+          colorAttr[i3 + 1] += (targetColors[i3 + 1] - colorAttr[i3 + 1]) * 0.02;
+          colorAttr[i3 + 2] += (targetColors[i3 + 2] - colorAttr[i3 + 2]) * 0.02;
         }
         
-        velocities[i3] *= 0.96;
-        velocities[i3 + 1] *= 0.96;
-        velocities[i3 + 2] *= 0.96;
-        
-        posAttr[i3] += velocities[i3];
-        posAttr[i3 + 1] += velocities[i3 + 1];
-        posAttr[i3 + 2] += velocities[i3 + 2];
-        
-        posAttr[i3] = clamp(posAttr[i3], -BOUNDS_X, BOUNDS_X);
-        posAttr[i3 + 1] = clamp(posAttr[i3 + 1], -BOUNDS_Y, BOUNDS_Y);
-        posAttr[i3 + 2] = clamp(posAttr[i3 + 2], -BOUNDS_Z, BOUNDS_Z);
-        
-        colorAttr[i3] += (targetColors[i3] - colorAttr[i3]) * 0.02;
-        colorAttr[i3 + 1] += (targetColors[i3 + 1] - colorAttr[i3 + 1]) * 0.02;
-        colorAttr[i3 + 2] += (targetColors[i3 + 2] - colorAttr[i3 + 2]) * 0.02;
+        drones.geometry.attributes.position.needsUpdate = true;
+        drones.geometry.attributes.color.needsUpdate = true;
       }
       
-      drones.geometry.attributes.position.needsUpdate = true;
-      drones.geometry.attributes.color.needsUpdate = true;
       drones.geometry.attributes.opacity.needsUpdate = true;
       
       const camTime = time * 0.0008;
@@ -500,13 +542,18 @@ export default function GateDroneBackground() {
     // 逐排点亮无人机的初始化动画
     const runInitAnimation = (onComplete: () => void) => {
       const totalRows = gridSize;
-      const rowDelay = 80; // 每排间隔时间(ms)
+      // 根据性能调整动画速度
+      const rowDelay = Math.max(40, 80 / performanceFactor); // 每排间隔时间(ms)
       let currentRow = 0;
       
       const lightUpRow = () => {
         if (currentRow >= totalRows) {
           // 所有无人机都点亮了，等待一小段时间后开始主序列
-          setTimeout(onComplete, 500);
+          // 确保有固定的暂停时间，不受性能影响
+          setTimeout(() => {
+            allowMovement = true; // 点亮完成后才允许移动
+            onComplete();
+          }, 2000); // 固定2秒暂停
           return;
         }
         
@@ -535,7 +582,7 @@ export default function GateDroneBackground() {
         const i3 = i * 3;
         const initialPos = initialPositionsRef.current!;
         targets[i3] = initialPos[i3];
-        targets[i3 + 1] = HOVER_HEIGHT + (Math.random() - 0.5) * 1;
+        targets[i3 + 1] = HOVER_HEIGHT + hoverOffsets[i];
         targets[i3 + 2] = initialPos[i3 + 2];
         
         // 随机颜色
@@ -774,13 +821,13 @@ export default function GateDroneBackground() {
 
     // 完整序列：升空 → 优优 → 爱心 → FOREVER → HAPPY → 升空 → 下落 → 循环
     const sequences = [
-      { setup: setupHover, duration: 2 },           // 0: 升空悬停
-      { setup: setupYouCharacters, duration: 2 },   // 1: 优优
-      { setup: setupHeartAroundCard, duration: 2 }, // 2: 爱心
-      { setup: setupForever, duration: 2 },         // 3: FOREVER
-      { setup: setupHappyEveryday, duration: 2 },   // 4: HAPPY
-      { setup: setupHover, duration: 2 },           // 5: 再次升空悬停
-      { setup: setupDescend, duration: 2 }          // 6: 下落到初始位置
+      { setup: setupHover, duration: 2000 },           // 0: 升空悬停 - 固定2秒
+      { setup: setupYouCharacters, duration: 2000 },   // 1: 优优 - 固定2秒
+      { setup: setupHeartAroundCard, duration: 2000 }, // 2: 爱心 - 固定2秒
+      { setup: setupForever, duration: 2000 },         // 3: FOREVER - 固定2秒
+      { setup: setupHappyEveryday, duration: 2000 },   // 4: HAPPY - 固定2秒
+      { setup: setupHover, duration: 2000 },           // 5: 再次升空悬停 - 固定2秒
+      { setup: setupDescend, duration: 2000 }          // 6: 下落到初始位置 - 固定2秒
     ];
 
     const playSequence = (index: number) => {
@@ -796,22 +843,31 @@ export default function GateDroneBackground() {
       if (timelineRef.current) timelineRef.current.kill();
       
       // 固定等待时间：飞行时间 + 悬停时间
-      const flyTime = 2.5; // 飞行到位时间
-      const holdTime = sequences[index].duration; // 悬停时间
+      const flyTime = 2500; // 飞行到位时间（毫秒）
+      const holdTime = sequences[index].duration; // 悬停时间（毫秒）
       
-      timelineRef.current = gsap.delayedCall(flyTime + holdTime, () => {
+      timelineRef.current = gsap.delayedCall((flyTime + holdTime) / 1000, () => {
         stageRef.current = index + 1;
         playSequence(stageRef.current);
       });
     };
 
+    // 预加载SVG，带错误处理
     Promise.all([
       loadSVGPath("/you.svg", 4.5),
       loadSVGPath("/FOREVER.svg", 3),
       loadSVGPath("/HAPPY.svg", 2.8)
-    ]).then(([you, forever, happy]) => {
+    ])
+    .then(([you, forever, happy]) => {
       svgPathsRef.current = { you, forever, happy };
       // 先运行初始化动画（逐排点亮），完成后开始主序列
+      runInitAnimation(() => {
+        playSequence(0);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading SVGs:', error);
+      // 即使加载失败也继续运行基本动画
       runInitAnimation(() => {
         playSequence(0);
       });

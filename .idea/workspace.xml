@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8611f079-0169-44c5-82fb-f096d6ba6f49" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.next/server/app/gallery/page.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/server/app/gallery/page_client-reference-manifest.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/server/vendor-chunks/three.js" beforeDir="false" afterPath="$PROJECT_DIR$/.next/server/vendor-chunks/three.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/chunks/app/gallery/page.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/css/app/gallery/page.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/02d5a8548f87e803.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/191d7f0e5bdcc4e0.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/1e1cdfae357f69a2.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/25eee7563bf814f7.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/2f8b7085fbd80b0d.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/31d66905ac611a56.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/35d3e5a3de0d21a7.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/3d194c7b8dca85f4.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/49e5807f27943470.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/4c07088e2faa5aa2.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/5ac3c6f831fbf37e.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/5e79451b06ae9947.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/64d914eb126c047b.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/682a8d7bad1730bb.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/6e139df339b9e2e9.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/715ee13b70eaf3b2.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/723fa5ba240fb980.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/746df64ca798c2b1.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/83487d1cce295d38.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/8485581f6d0e8534.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/874d1e77fdf1f1e1.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/885381b99d2f6674.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/895d37a9c4a950ee.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/8a5178f8bc2c9d44.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/8d8b750fdfae6d54.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/8e4e68ab4485754b.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/97aeacbf74a44522.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/9efac5e1e15390c8.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/a1b353e58ad929d8.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/a33d52c5907c6441.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/a5a5f0fc1b744539.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/ae0e0104293e3583.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/ae726528ed91baf1.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.02d5a8548f87e803.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.191d7f0e5bdcc4e0.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.1e1cdfae357f69a2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.25eee7563bf814f7.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.2f8b7085fbd80b0d.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.31d66905ac611a56.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.3d194c7b8dca85f4.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.4c07088e2faa5aa2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.5ac3c6f831fbf37e.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.5e79451b06ae9947.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.64d914eb126c047b.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.6e139df339b9e2e9.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.715ee13b70eaf3b2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.723fa5ba240fb980.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.746df64ca798c2b1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.83487d1cce295d38.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.8485581f6d0e8534.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.874d1e77fdf1f1e1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.885381b99d2f6674.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.8a5178f8bc2c9d44.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.8d8b750fdfae6d54.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.8e4e68ab4485754b.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.97aeacbf74a44522.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.9efac5e1e15390c8.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.a1b353e58ad929d8.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.a33d52c5907c6441.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.a5a5f0fc1b744539.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.ae0e0104293e3583.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.ae726528ed91baf1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.b8672815484744b5.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.be06f864d58f1ce7.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.d9a6ea624c28a1ad.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.e59cc22a90f3876a.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.e66aaad91e0cec94.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/app/gallery/page.fee6cbbf917022c1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/b8672815484744b5.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/be06f864d58f1ce7.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/d9a6ea624c28a1ad.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/e59cc22a90f3876a.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/e66aaad91e0cec94.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/fee6cbbf917022c1.webpack.hot-update.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.02d5a8548f87e803.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.191d7f0e5bdcc4e0.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.1e1cdfae357f69a2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.25eee7563bf814f7.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.2f8b7085fbd80b0d.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.31d66905ac611a56.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.35d3e5a3de0d21a7.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.3d194c7b8dca85f4.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.49e5807f27943470.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.4c07088e2faa5aa2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.5ac3c6f831fbf37e.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.5e79451b06ae9947.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.64d914eb126c047b.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.682a8d7bad1730bb.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.6e139df339b9e2e9.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.715ee13b70eaf3b2.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.723fa5ba240fb980.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.746df64ca798c2b1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.83487d1cce295d38.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.8485581f6d0e8534.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.874d1e77fdf1f1e1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.885381b99d2f6674.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.895d37a9c4a950ee.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.8a5178f8bc2c9d44.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.8d8b750fdfae6d54.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.8e4e68ab4485754b.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.97aeacbf74a44522.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.9efac5e1e15390c8.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.a1b353e58ad929d8.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.a33d52c5907c6441.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.a5a5f0fc1b744539.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.ae0e0104293e3583.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.ae726528ed91baf1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.b8672815484744b5.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.be06f864d58f1ce7.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.d9a6ea624c28a1ad.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.e59cc22a90f3876a.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.e66aaad91e0cec94.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/static/webpack/webpack.fee6cbbf917022c1.hot-update.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.next/types/app/gallery/page.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/GateDroneBackground.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/GateDroneBackground.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/gallery/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/gallery/page.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Xujiuj&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Xujiuj/youyou.git&quot;,
+    &quot;accountId&quot;: &quot;94a592e9-da31-4816-a788-ec9e8174bd9a&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="383Z6zYE2VPlu2VeXxchK2IVqu0" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "js.debugger.nextJs.config.created.client": "true",
+    "js.debugger.nextJs.config.created.server": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "D:/youyou",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.Next.js: 服务器端.executor": "Run",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "D:\\youyou\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="npm.Next.js: 服务器端">
+    <configuration name="Next.js: 调试客户端" type="JavascriptDebugType" uri="http://localhost:3000/">
+      <method v="2" />
+    </configuration>
+    <configuration name="Next.js: 服务器端" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-WS-253.29346.143" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="8611f079-0169-44c5-82fb-f096d6ba6f49" name="更改" comment="" />
+      <created>1768030044533</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1768030044533</updated>
+      <workItem from="1768030046003" duration="297000" />
+      <workItem from="1768181534716" duration="185000" />
+      <workItem from="1768181741360" duration="2113000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
