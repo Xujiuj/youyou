@@ -804,6 +804,17 @@
   z-index: 59;
 }
 
+/* 爱心飞行轨迹 canvas */
+.gallery-heart-trail-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 58;
+}
+
 .gallery-love-letter-btn:hover {
   transform: scale(1.15);
   background: rgba(255, 116, 183, 0.25);

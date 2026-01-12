@@ -480,9 +480,9 @@ export default function GateDroneBackground() {
           const dz = targets[i3 + 2] - posAttr[i3 + 2];
           const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
           
-          // 提高速度让无人机更快到位
-          const maxSpeed = 0.8;
-          const acceleration = Math.min(0.025, distance * 0.002);
+          // 降低速度让无人机飞行更平滑，配合2.5秒飞行时间
+          const maxSpeed = 0.35;
+          const acceleration = Math.min(0.012, distance * 0.001);
           
           velocities[i3] += dx * acceleration;
           velocities[i3 + 1] += dy * acceleration;
