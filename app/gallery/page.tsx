@@ -109,8 +109,22 @@ export default function GalleryPage() {
         </button>
         <div className="gallery-footer-num"><span className="current">{String(currentIndex + 1).padStart(2, "0")}</span><span className="sep">/</span><span className="total">{String(SCENES.length).padStart(2, "0")}</span></div>
         <div className="gallery-footer-title">{scene.titleEn}</div>
-        {currentIndex < SCENES.length - 1 && <div className="gallery-footer-hint">↓ scroll</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {currentIndex < SCENES.length - 1 && <div className="gallery-footer-hint">↓ scroll</div>}
+          <button className="gallery-forward-btn" onClick={() => setShowEnding(true)} title="前往书信">
+            <span>→</span>
+          </button>
+        </div>
       </footer>
+
+      {/* 最后一张图时显示爱心信件按钮 */}
+      {currentIndex === SCENES.length - 1 && !showEnding && (
+        <button className="gallery-love-letter-btn" onClick={() => setShowEnding(true)} title="打开书信">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </button>
+      )}
 
       {showEnding && <EndingPage lastScene={SCENES[SCENES.length - 1]} />}
     </div>
@@ -629,8 +643,8 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
-    // 照片到书信的转换动画
-    gsap.set(letter, { opacity: 0, scale: 0.85, y: 60 });
+    // 书信动画
+    gsap.set(letter, { opacity: 0, scale: 0.9, y: 40 });
     
     // 存储原始文本并清空
     const textBlocks = letter.querySelectorAll(".gallery-ending-text p");
@@ -645,14 +659,23 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       opacity: 1,
       scale: 1,
       y: 0,
-      duration: 1.8,
+      duration: 1.5,
       ease: "power3.out",
       delay: 0.6,
       onComplete: () => {
-        // 打字机效果 - 所有行同时开始，每行逐字显示
-        textBlocks.forEach((block, index) => {
-          const originalText = originalTexts[index];
-          if (!originalText) return;
+        // 逐段逐字打字机效果
+        let currentBlockIndex = 0;
+        
+        const typeNextBlock = () => {
+          if (currentBlockIndex >= textBlocks.length) return;
+          
+          const block = textBlocks[currentBlockIndex];
+          const originalText = originalTexts[currentBlockIndex];
+          if (!originalText) {
+            currentBlockIndex++;
+            typeNextBlock();
+            return;
+          }
           
           gsap.set(block, { opacity: 1 });
           
@@ -663,9 +686,14 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
               charIndex++;
             } else {
               clearInterval(typeInterval);
+              currentBlockIndex++;
+              // 段落之间稍作停顿
+              setTimeout(typeNextBlock, 300);
             }
-          }, 50 + Math.random() * 30);
-        });
+          }, 45);
+        };
+        
+        typeNextBlock();
       }
     });
     
@@ -675,6 +703,27 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
     };
     resize();
     window.addEventListener("resize", resize);
+    
+    // 流星系统
+    const meteors: Array<{
+      x: number;
+      y: number;
+      length: number;
+      speed: number;
+      angle: number;
+    }> = [];
+    
+    const createMeteor = () => {
+      if (meteors.length < 5) {
+        meteors.push({
+          x: Math.random() * canvas.width,
+          y: -50,
+          length: 50 + Math.random() * 40,
+          speed: 3 + Math.random() * 3,
+          angle: Math.PI / 4 + (Math.random() - 0.5) * 0.3
+        });
+      }
+    };
     
     // 烟花粒子系统
     const fireworks: Array<{
@@ -702,16 +751,15 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
     
     const createFirework = () => {
       const x = Math.random() * canvas.width;
-      const targetY = canvas.height * 0.2 + Math.random() * canvas.height * 0.25;
+      const targetY = canvas.height * 0.15 + Math.random() * canvas.height * 0.3;
       const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2"];
       
-      // 限制最大烟花数量以提高性能
-      if (fireworks.length < 8) {
+      if (fireworks.length < 6) {
         fireworks.push({
           x,
           y: canvas.height + 10,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: -16 - Math.random() * 6,
+          vx: (Math.random() - 0.5) * 2,
+          vy: -18 - Math.random() * 4,
           life: 1,
           color: colors[Math.floor(Math.random() * colors.length)],
           trail: [],
@@ -723,13 +771,12 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
     
     const explodeFirework = (firework: typeof fireworks[0]) => {
       const colors = ["#ff74b7", "#ffa8d5", "#ffb6c1", "#ffc0e3", "#ffffff", "#ff9ed2", "#ffc0cb"];
-      // 减少粒子数量以提高性能
-      const particleCount = 60 + Math.floor(Math.random() * 30);
+      const particleCount = 80 + Math.floor(Math.random() * 40);
       
       for (let i = 0; i < particleCount; i++) {
-        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.4;
-        const speed = 5 + Math.random() * 7;
-        const size = 2.5 + Math.random() * 4;
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
+        const speed = 4 + Math.random() * 8;
+        const size = 2 + Math.random() * 3;
         
         particles.push({
           x: firework.x,
@@ -739,50 +786,15 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
           life: 1,
           color: colors[Math.floor(Math.random() * colors.length)],
           size,
-          decay: 0.018 + Math.random() * 0.012
+          decay: 0.012 + Math.random() * 0.008
         });
-      }
-    };
-    
-    // SVG线条闪现 - 限制数量以提高性能
-    const svgPaths: Array<{ path: string; x: number; y: number; opacity: number; life: number }> = [];
-    const svgFiles = SCENES.map(s => s.svg);
-    
-    const createSVGLine = async () => {
-      // 限制同时显示的数量
-      if (svgPaths.length > 2) return;
-      
-      const svgFile = svgFiles[Math.floor(Math.random() * svgFiles.length)];
-      try {
-        const response = await fetch(svgFile);
-        const svgText = await response.text();
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
-        const allPaths = Array.from(svgDoc.querySelectorAll("path"));
-        
-        if (allPaths.length > 0) {
-          const pathEl = allPaths[Math.floor(Math.random() * allPaths.length)];
-          const pathData = pathEl.getAttribute("d");
-          
-          if (pathData) {
-            svgPaths.push({
-              path: pathData,
-              x: Math.random() * canvas.width,
-              y: Math.random() * canvas.height,
-              opacity: 1,
-              life: 1500 + Math.random() * 800 // 缩短生命周期
-            });
-          }
-        }
-      } catch (e) {
-        // Silent fail
       }
     };
     
     let animId: number;
     let lastTime = performance.now();
     let fireworkTimer = 0;
-    let svgTimer = 0;
+    let meteorTimer = 0;
     
     const animate = (currentTime: number) => {
       const delta = currentTime - lastTime;
@@ -790,59 +802,99 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // 烟花
+      // 流星生成
+      meteorTimer += delta;
+      if (meteorTimer > 400 + Math.random() * 600) {
+        meteorTimer = 0;
+        createMeteor();
+      }
+      
+      // 绘制流星
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const meteor = meteors[i];
+        const dx = Math.cos(meteor.angle) * meteor.speed;
+        const dy = Math.sin(meteor.angle) * meteor.speed;
+        
+        meteor.x += dx;
+        meteor.y += dy;
+        
+        ctx.save();
+        const gradient = ctx.createLinearGradient(
+          meteor.x - Math.cos(meteor.angle) * meteor.length,
+          meteor.y - Math.sin(meteor.angle) * meteor.length,
+          meteor.x,
+          meteor.y
+        );
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+        gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.4)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0.8)");
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
+        
+        ctx.beginPath();
+        ctx.moveTo(meteor.x, meteor.y);
+        ctx.lineTo(meteor.x - Math.cos(meteor.angle) * meteor.length, meteor.y - Math.sin(meteor.angle) * meteor.length);
+        ctx.stroke();
+        ctx.restore();
+        
+        if (meteor.y > canvas.height + 100 || meteor.x < -100 || meteor.x > canvas.width + 100) {
+          meteors.splice(i, 1);
+        }
+      }
+      
+      // 烟花生成
       fireworkTimer += delta;
-      // 增加时间间隔以减少性能消耗
-      if (fireworkTimer > 2000 + Math.random() * 2000) {
+      if (fireworkTimer > 800 + Math.random() * 1200) {
         fireworkTimer = 0;
         createFirework();
       }
       
+      // 更新烟花
       for (let i = fireworks.length - 1; i >= 0; i--) {
         const fw = fireworks[i];
         if (fw.exploded) continue;
         
-        if (fw.y > fw.targetY) {
-          fw.x += fw.vx;
-          fw.y += fw.vy;
-          fw.vy += 0.35;
-          fw.life -= 0.003;
-          
-          const trailOpacity = fw.life * 0.9;
-          fw.trail.push({ x: fw.x, y: fw.y, opacity: trailOpacity });
-          if (fw.trail.length > 25) fw.trail.shift();
-          
-          ctx.save();
-          ctx.strokeStyle = fw.color;
-          ctx.lineWidth = 5;
-          ctx.shadowBlur = 25;
-          ctx.shadowColor = fw.color;
-          
-          for (let j = 0; j < fw.trail.length - 1; j++) {
-            const p1 = fw.trail[j];
-            const p2 = fw.trail[j + 1];
-            ctx.globalAlpha = p1.opacity * 0.7;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
+        fw.x += fw.vx;
+        fw.y += fw.vy;
+        fw.vy += 0.25;
         
-        if (fw.y <= fw.targetY && !fw.exploded) {
+        fw.trail.push({ x: fw.x, y: fw.y, opacity: 1 });
+        if (fw.trail.length > 20) fw.trail.shift();
+        
+        ctx.save();
+        ctx.strokeStyle = fw.color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = fw.color;
+        
+        for (let j = 0; j < fw.trail.length - 1; j++) {
+          const p1 = fw.trail[j];
+          const p2 = fw.trail[j + 1];
+          ctx.globalAlpha = (j / fw.trail.length) * 0.8;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+        ctx.restore();
+        
+        if (fw.y <= fw.targetY || fw.vy >= 0) {
           fw.exploded = true;
           explodeFirework(fw);
           fireworks.splice(i, 1);
         }
       }
       
+      // 更新爆炸粒子
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.22;
-        p.vx *= 0.96;
+        p.vy += 0.15;
+        p.vx *= 0.98;
         p.life -= p.decay;
         
         if (p.life <= 0 || p.y > canvas.height + 50) {
@@ -853,10 +905,10 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
         ctx.save();
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
         gradient.addColorStop(0, p.color);
-        gradient.addColorStop(0.7, p.color + "80");
+        gradient.addColorStop(0.6, p.color + "80");
         gradient.addColorStop(1, "transparent");
         ctx.fillStyle = gradient;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 8;
         ctx.shadowColor = p.color;
         ctx.globalAlpha = p.life;
         ctx.beginPath();
@@ -864,42 +916,6 @@ function EndingPage({ lastScene }: { lastScene: (typeof SCENES)[0] }) {
         ctx.fill();
         ctx.restore();
       }
-      
-      // SVG线条
-      svgTimer += delta;
-      // 增加时间间隔以减少性能消耗
-      if (svgTimer > 3000 + Math.random() * 2000) {
-        svgTimer = 0;
-        createSVGLine();
-      }
-      
-      svgPaths.forEach((svgPath, i) => {
-        svgPath.life -= delta;
-        svgPath.opacity = Math.min(1, svgPath.life / 1000);
-        
-        if (svgPath.life <= 0) {
-          svgPaths.splice(i, 1);
-          return;
-        }
-        
-        ctx.save();
-        ctx.strokeStyle = "rgba(255, 182, 193, 0.6)";
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = svgPath.opacity * 0.4;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "rgba(255, 182, 193, 0.8)";
-        
-        try {
-          const path2d = new Path2D(svgPath.path);
-          ctx.translate(svgPath.x, svgPath.y);
-          ctx.scale(0.3, 0.3);
-          ctx.stroke(path2d);
-        } catch (e) {
-          // Silent fail
-        }
-        
-        ctx.restore();
-      });
       
       animId = requestAnimationFrame(animate);
     };
