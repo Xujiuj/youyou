@@ -6,10 +6,14 @@ import gsap from "gsap";
 
 const DRONE_COUNT = 1000;
 const CARD_RADIUS = 25;
-const BOUNDS_X = 100;  // 进一步增大X边界
+const BOUNDS_X = 100;
 const BOUNDS_Y = 50;
 const BOUNDS_Z = 35;
 const HOVER_HEIGHT = 25;
+
+// 飞行时间配置（秒）
+const FLY_DURATION = 2.5;
+const HOLD_DURATION = 2.0;
 
 // 添加性能检测函数
 const getPerformanceFactor = (): number => {
@@ -424,93 +428,74 @@ export default function GateDroneBackground() {
     const colorAttr = drones.geometry.attributes.color.array as Float32Array;
     const opacityAttr = drones.geometry.attributes.opacity.array as Float32Array;
 
-    const checkAllArrived = (targets: Float32Array, threshold = 0.5): boolean => {
-      let allArrived = true;
-      for (let i = 0; i < DRONE_COUNT; i++) {
-        const i3 = i * 3;
-        const dx = targets[i3] - posAttr[i3];
-        const dy = targets[i3 + 1] - posAttr[i3 + 1];
-        const dz = targets[i3 + 2] - posAttr[i3 + 2];
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist > threshold) {
-          allArrived = false;
-          break;
-        }
-      }
-      return allArrived;
-    };
-
     // 悬停时的浮动偏移量，用于实现悬停效果
     const hoverOffsets = new Float32Array(DRONE_COUNT);
     const hoverPhases = new Float32Array(DRONE_COUNT);
     for (let i = 0; i < DRONE_COUNT; i++) {
-      hoverOffsets[i] = (Math.random() - 0.5) * 2; // 随机浮动幅度
-      hoverPhases[i] = Math.random() * Math.PI * 2; // 随机相位
+      hoverOffsets[i] = (Math.random() - 0.5) * 2;
+      hoverPhases[i] = Math.random() * Math.PI * 2;
     }
 
     // 控制是否允许无人机移动（初始化阶段不移动）
     let allowMovement = false;
+    
+    // 基于时间的动画控制
+    const startPositions = new Float32Array(DRONE_COUNT * 3);
+    let animationStartTime = 0;
+    let isFlying = false;
+
+    // 开始新的飞行动画
+    const startFlyAnimation = () => {
+      for (let i = 0; i < DRONE_COUNT * 3; i++) {
+        startPositions[i] = posAttr[i];
+      }
+      animationStartTime = Date.now();
+      isFlying = true;
+    };
+
+    // 缓动函数：easeInOutCubic
+    const easeInOutCubic = (t: number): number => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
 
     const animate = () => {
       if (!threeRef.current) return;
       
       const { scene, camera, renderer, drones, droneData } = threeRef.current;
-      const { velocities, targets, targetColors } = droneData;
+      const { targets, targetColors } = droneData;
       
       const time = Date.now() * 0.001;
       (material.uniforms.time as THREE.IUniform).value = time;
       
-      // 只有在允许移动时才更新位置
       if (allowMovement) {
-        // 检查是否处于悬停阶段（stage 0 或 5）
         const isHovering = stageRef.current === 0 || stageRef.current === 5;
         
-        for (let i = 0; i < DRONE_COUNT; i++) {
-          const i3 = i * 3;
+        if (isFlying) {
+          const elapsed = (Date.now() - animationStartTime) / 1000;
+          const progress = Math.min(elapsed / FLY_DURATION, 1);
+          const easedProgress = easeInOutCubic(progress);
           
-          // 悬停时添加浮动效果
-          let targetY = targets[i3 + 1];
-          if (isHovering) {
+          for (let i = 0; i < DRONE_COUNT; i++) {
+            const i3 = i * 3;
+            
+            posAttr[i3] = startPositions[i3] + (targets[i3] - startPositions[i3]) * easedProgress;
+            posAttr[i3 + 1] = startPositions[i3 + 1] + (targets[i3 + 1] - startPositions[i3 + 1]) * easedProgress;
+            posAttr[i3 + 2] = startPositions[i3 + 2] + (targets[i3 + 2] - startPositions[i3 + 2]) * easedProgress;
+            
+            colorAttr[i3] += (targetColors[i3] - colorAttr[i3]) * 0.05;
+            colorAttr[i3 + 1] += (targetColors[i3 + 1] - colorAttr[i3 + 1]) * 0.05;
+            colorAttr[i3 + 2] += (targetColors[i3 + 2] - colorAttr[i3 + 2]) * 0.05;
+          }
+          
+          if (progress >= 1) {
+            isFlying = false;
+          }
+        } else if (isHovering) {
+          for (let i = 0; i < DRONE_COUNT; i++) {
+            const i3 = i * 3;
             const hoverWave = Math.sin(time * 1.5 + hoverPhases[i]) * 0.8;
-            targetY = HOVER_HEIGHT + hoverOffsets[i] + hoverWave;
+            posAttr[i3 + 1] = targets[i3 + 1] + hoverWave;
           }
-          
-          const dx = targets[i3] - posAttr[i3];
-          const dy = targetY - posAttr[i3 + 1];
-          const dz = targets[i3 + 2] - posAttr[i3 + 2];
-          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-          
-          // 降低速度让无人机飞行更平滑，配合2.5秒飞行时间
-          const maxSpeed = 0.35;
-          const acceleration = Math.min(0.012, distance * 0.001);
-          
-          velocities[i3] += dx * acceleration;
-          velocities[i3 + 1] += dy * acceleration;
-          velocities[i3 + 2] += dz * acceleration;
-          
-          const speed = Math.sqrt(velocities[i3] * velocities[i3] + velocities[i3 + 1] * velocities[i3 + 1] + velocities[i3 + 2] * velocities[i3 + 2]);
-          if (speed > maxSpeed) {
-            const scale = maxSpeed / speed;
-            velocities[i3] *= scale;
-            velocities[i3 + 1] *= scale;
-            velocities[i3 + 2] *= scale;
-          }
-          
-          velocities[i3] *= 0.96;
-          velocities[i3 + 1] *= 0.96;
-          velocities[i3 + 2] *= 0.96;
-          
-          posAttr[i3] += velocities[i3];
-          posAttr[i3 + 1] += velocities[i3 + 1];
-          posAttr[i3 + 2] += velocities[i3 + 2];
-          
-          posAttr[i3] = clamp(posAttr[i3], -BOUNDS_X, BOUNDS_X);
-          posAttr[i3 + 1] = clamp(posAttr[i3 + 1], -BOUNDS_Y, BOUNDS_Y);
-          posAttr[i3 + 2] = clamp(posAttr[i3 + 2], -BOUNDS_Z, BOUNDS_Z);
-          
-          colorAttr[i3] += (targetColors[i3] - colorAttr[i3]) * 0.02;
-          colorAttr[i3 + 1] += (targetColors[i3 + 1] - colorAttr[i3 + 1]) * 0.02;
-          colorAttr[i3 + 2] += (targetColors[i3 + 2] - colorAttr[i3 + 2]) * 0.02;
         }
         
         drones.geometry.attributes.position.needsUpdate = true;
@@ -809,29 +794,18 @@ export default function GateDroneBackground() {
       }
     };
 
-    const waitForArrival = (callback: () => void, timeout = 3000) => {
-      const startTime = Date.now();
-      const checkInterval = setInterval(() => {
-        if (checkAllArrived(threeRef.current!.droneData.targets, 1.5) || Date.now() - startTime > timeout) {
-          clearInterval(checkInterval);
-          callback();
-        }
-      }, 100);
-    };
-
     // 完整序列：升空 → 优优 → 爱心 → FOREVER → HAPPY → 升空 → 下落 → 循环
     const sequences = [
-      { setup: setupHover, duration: 2000 },           // 0: 升空悬停 - 固定2秒
-      { setup: setupYouCharacters, duration: 2000 },   // 1: 优优 - 固定2秒
-      { setup: setupHeartAroundCard, duration: 2000 }, // 2: 爱心 - 固定2秒
-      { setup: setupForever, duration: 2000 },         // 3: FOREVER - 固定2秒
-      { setup: setupHappyEveryday, duration: 2000 },   // 4: HAPPY - 固定2秒
-      { setup: setupHover, duration: 2000 },           // 5: 再次升空悬停 - 固定2秒
-      { setup: setupDescend, duration: 2000 }          // 6: 下落到初始位置 - 固定2秒
+      { setup: setupHover },           // 0: 升空悬停
+      { setup: setupYouCharacters },   // 1: 优优
+      { setup: setupHeartAroundCard }, // 2: 爱心
+      { setup: setupForever },         // 3: FOREVER
+      { setup: setupHappyEveryday },   // 4: HAPPY
+      { setup: setupHover },           // 5: 再次升空悬停
+      { setup: setupDescend }          // 6: 下落到初始位置
     ];
 
     const playSequence = (index: number) => {
-      // 循环回到开头（从升空开始）
       if (index >= sequences.length) {
         stageRef.current = 0;
         playSequence(0);
@@ -839,14 +813,14 @@ export default function GateDroneBackground() {
       }
       
       sequences[index].setup();
+      startFlyAnimation();
       
       if (timelineRef.current) timelineRef.current.kill();
       
-      // 固定等待时间：飞行时间 + 悬停时间
-      const flyTime = 2500; // 飞行到位时间（毫秒）
-      const holdTime = sequences[index].duration; // 悬停时间（毫秒）
+      // 固定时间：2.5秒飞行 + 2秒悬停
+      const totalTime = FLY_DURATION + HOLD_DURATION;
       
-      timelineRef.current = gsap.delayedCall((flyTime + holdTime) / 1000, () => {
+      timelineRef.current = gsap.delayedCall(totalTime, () => {
         stageRef.current = index + 1;
         playSequence(stageRef.current);
       });
