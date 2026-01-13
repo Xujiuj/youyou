@@ -218,12 +218,12 @@
     &quot;assignee&quot;: &quot;Xujiuj&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Xujiuj/youyou.git",
-    "accountId": "e9acfbbb-c11d-4f0d-96fe-325301d3f733"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Xujiuj/youyou.git&quot;,
+    &quot;accountId&quot;: &quot;e9acfbbb-c11d-4f0d-96fe-325301d3f733&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
 }</component>
